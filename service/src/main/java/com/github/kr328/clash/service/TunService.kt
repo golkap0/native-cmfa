@@ -123,7 +123,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         val downMbps = zivpnStore.down
         
         // MATCH MAGISK SCRIPT: 4 Instances (1080-1083)
-        val ports = listOf(1080, 1081, 1082, 1083)
+        val ports = listOf(1080, 1081, 1082, 1083, 1084, 1085, 1086, 1087)
         val ranges = zivpnStore.portRanges.split(",").filter { it.isNotBlank() }.take(4)
 
         Log.d("ZIVPN: Starting 4 Hysteria Cores (Magisk Style) with Host: $serverHost")
