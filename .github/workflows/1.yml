@@ -1,4 +1,4 @@
-name: ZIVPN Native Build
+name: ZIVPN Native Build upload to telegram
 on:
   push:
     branches:
