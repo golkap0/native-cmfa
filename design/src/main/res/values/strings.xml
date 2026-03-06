@@ -350,6 +350,7 @@
     <string name="import_from_qr_exception">An unhandled system exception occurred.</string>
 
     <string name="zivpn_settings">ZIVPN Native Settings</string>
+    <string name="zivpn_core_count">ZI CORE</string>
     <string name="zivpn_server_profiles">Server Profiles</string>
     <string name="zivpn_add_profile">Add Profile</string>
     <string name="zivpn_edit_profile">Edit Profile</string>

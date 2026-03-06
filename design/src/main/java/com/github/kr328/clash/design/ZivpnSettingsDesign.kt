@@ -17,6 +17,7 @@ import com.github.kr328.clash.design.util.root
 import com.github.kr328.clash.service.model.ZivpnServerProfile
 import com.github.kr328.clash.service.store.ZivpnStore
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
@@ -54,6 +55,24 @@ class ZivpnSettingsDesign(
 
         val screen = preferenceScreen(context) {
             category(R.string.zivpn_settings)
+
+            slider(
+                value = store::coreCount,
+                icon = R.drawable.ic_baseline_info,
+                title = R.string.zivpn_core_count,
+                from = 4.0f,
+                to = 10.0f
+            ).apply {
+                launch(Dispatchers.Main) {
+                    val current = store.coreCount
+                    summary = current.toString()
+                    listener = object : OnChangedListener {
+                        override fun onChanged() {
+                            summary = store.coreCount.toString()
+                        }
+                    }
+                }
+            }
 
             clickable(
                 title = R.string.zivpn_server_profiles,

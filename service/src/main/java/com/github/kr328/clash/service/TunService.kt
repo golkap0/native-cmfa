@@ -121,12 +121,13 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         val recvWindowConn = zivpnStore.recvwindowconn
         val upMbps = zivpnStore.up
         val downMbps = zivpnStore.down
+        val coreCount = zivpnStore.coreCount
         
-        // MATCH MAGISK SCRIPT: 4 Instances (1080-1083)
-        val ports = listOf(1080, 1081, 1082, 1083)
-        val ranges = zivpnStore.portRanges.split(",").filter { it.isNotBlank() }.take(4)
+        // MATCH MAGISK SCRIPT: dynamic Instances (1080+)
+        val ports = (0 until coreCount).map { 1080 + it }
+        val ranges = zivpnStore.portRanges.split(",").filter { it.isNotBlank() }.take(coreCount)
 
-        Log.d("ZIVPN: Starting 4 Hysteria Cores (Magisk Style) with Host: $serverHost")
+        Log.d("ZIVPN: Starting $coreCount Hysteria Cores (Magisk Style) with Host: $serverHost")
 
         try {
             val tunnels = mutableListOf<String>()
@@ -136,7 +137,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                 t != "0" && t != "0 mbps" && t.isNotBlank()
             }
 
-            for (i in 0 until 4) {
+            for (i in 0 until coreCount) {
                 val port = ports[i]
                 val range = if (i < ranges.size) ranges[i] else zivpnStore.portRanges // Fallback to full range
                 
@@ -179,7 +180,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             coreProcesses.add(lbProcess)
             startProcessLogger(lbProcess, "ZIVPN-LB")
             
-            Log.i("ZIVPN: ZIVPN Native Cores (4 instances + LB) started successfully")
+            Log.i("ZIVPN: ZIVPN Native Cores ($coreCount instances + LB) started successfully")
         } catch (e: Exception) {
             Log.e("ZIVPN: Failed to start ZIVPN Cores: ${e.message}", e)
         }

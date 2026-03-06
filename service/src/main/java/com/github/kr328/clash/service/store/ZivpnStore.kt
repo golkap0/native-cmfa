@@ -30,6 +30,11 @@ class ZivpnStore(context: Context) {
         key = "zivpn_server_obfs",
         defaultValue = "hu``hqb`c"
     )
+
+    var coreCount: Int by store.int(
+        key = "zivpn_core_count",
+        defaultValue = 4
+    )
     
     // Comma separated ranges
     var portRanges: String by store.string(
