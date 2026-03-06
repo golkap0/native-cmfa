@@ -136,7 +136,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                 t != "0" && t != "0 mbps" && t.isNotBlank()
             }
 
-            for (i in 0 until 4) {
+            for (i in 0 until 8) {
                 val port = ports[i]
                 val range = if (i < ranges.size) ranges[i] else zivpnStore.portRanges // Fallback to full range
                 
