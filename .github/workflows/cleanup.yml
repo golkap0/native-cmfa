@@ -1,0 +1,19 @@
+name: Hapus Semua Action Manual
+
+on:
+  workflow_dispatch: # Trigger ini berarti hanya jalan kalau diklik manual
+
+jobs:
+  delete_runs:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 0       # Menghapus tanpa sisa hari (langsung hapus)
+          keep_minimum_runs: 0 # Tidak menyisakan run terakhir satupun
