@@ -82,6 +82,13 @@ fun PreferenceScreen.slider(
     impl.valueTo = to
     impl.stepSize = 1.0f
 
+    binding.sliderView.apply {
+        this.valueFrom = from
+        this.valueTo = to
+        this.stepSize = 1.0f
+        this.value = from
+    }
+
     impl.configure()
 
     addElement(impl)
@@ -92,7 +99,7 @@ fun PreferenceScreen.slider(
         }
 
         binding.sliderView.apply {
-            this.value = initialValue.toFloat().coerceIn(impl.valueFrom, impl.valueTo)
+            this.value = initialValue.toFloat().coerceIn(valueFrom, valueTo)
 
             addOnChangeListener { _, v, fromUser ->
                 if (fromUser) {

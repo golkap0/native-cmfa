@@ -63,14 +63,9 @@ class ZivpnSettingsDesign(
                 from = 4.0f,
                 to = 10.0f
             ).apply {
-                launch(Dispatchers.Main) {
-                    val current = store.coreCount
-                    summary = current.toString()
-                    listener = object : OnChangedListener {
-                        override fun onChanged() {
-                            summary = store.coreCount.toString()
-                        }
-                    }
+                summary = store.coreCount.toString()
+                listener = OnChangedListener {
+                    summary = store.coreCount.toString()
                 }
             }
 
