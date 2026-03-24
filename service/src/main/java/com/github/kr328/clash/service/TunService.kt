@@ -199,7 +199,8 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         if (zivpnStore.wakeLock) {
             val powerManager = getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
             wakeLock = powerManager.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "ZIVPN:ServiceWakeLock")
-            wakeLock?.acquire(10*60*60*1000L /*10 hours limit*/)
+            wakeLock?.setReferenceCounted(false)
+            wakeLock?.acquire()
         }
 
         if (StatusProvider.serviceRunning)
@@ -218,7 +219,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         sendClashStarted()
 
-        return super.onStartCommand(intent, flags, startId)
+        return START_STICKY
     }
 
     override fun onDestroy() {
@@ -249,6 +250,8 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
     private fun TunModule.open() {
         val store = ServiceStore(self)
+        val zivpnStore = com.github.kr328.clash.service.store.ZivpnStore(self)
+        val tunMtu = zivpnStore.mtu.coerceIn(1280, 9000)
 
         val device = with(Builder()) {
             // Interface address
@@ -299,7 +302,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             setBlocking(false)
 
             // Mtu
-            setMtu(TUN_MTU)
+            setMtu(tunMtu)
 
             // Session Name
             setSession("ZIVPN Native")
@@ -356,7 +359,6 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
     }
 
     companion object {
-        private const val TUN_MTU = 9000
         private const val TUN_SUBNET_PREFIX = 30
         private const val TUN_GATEWAY = "172.19.0.1"
         private const val TUN_SUBNET_PREFIX6 = 126

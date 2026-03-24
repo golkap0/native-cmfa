@@ -46,6 +46,16 @@ class ZivpnSettingsDesign(
         }
     }
 
+    private val mtuAdapter = object : NullableTextAdapter<Int> {
+        override fun from(value: Int): String {
+            return value.toString()
+        }
+
+        override fun to(text: String?): Int {
+            return text?.toIntOrNull()?.coerceIn(1280, 9000) ?: 9000
+        }
+    }
+
     init {
         binding.surface = surface
 
@@ -161,6 +171,14 @@ class ZivpnSettingsDesign(
                 icon = R.drawable.ic_baseline_info,
                 title = R.string.zivpn_clash_yaml,
                 placeholder = R.string.zivpn_clash_yaml
+            )
+
+            editableText(
+                value = store::mtu,
+                adapter = mtuAdapter,
+                icon = R.drawable.ic_baseline_info,
+                title = R.string.zivpn_mtu,
+                placeholder = R.string.zivpn_mtu_summary
             )
 
             switch(

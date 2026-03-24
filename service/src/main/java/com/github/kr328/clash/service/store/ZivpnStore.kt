@@ -72,6 +72,11 @@ class ZivpnStore(context: Context) {
         defaultValue = true
     )
 
+    var mtu: Int by store.int(
+        key = "zivpn_mtu",
+        defaultValue = 9000
+    )
+
     var serverProfiles: String by store.string(
         key = "zivpn_server_profiles",
         defaultValue = "[]"
