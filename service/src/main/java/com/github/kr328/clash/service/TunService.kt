@@ -250,6 +250,8 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
     private fun TunModule.open() {
         val store = ServiceStore(self)
+        val zivpnStore = com.github.kr328.clash.service.store.ZivpnStore(self)
+        val tunMtu = zivpnStore.mtu.coerceIn(1280, 9000)
 
         val device = with(Builder()) {
             // Interface address
@@ -300,7 +302,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             setBlocking(false)
 
             // Mtu
-            setMtu(TUN_MTU)
+            setMtu(tunMtu)
 
             // Session Name
             setSession("ZIVPN Native")
@@ -357,7 +359,6 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
     }
 
     companion object {
-        private const val TUN_MTU = 9000
         private const val TUN_SUBNET_PREFIX = 30
         private const val TUN_GATEWAY = "172.19.0.1"
         private const val TUN_SUBNET_PREFIX6 = 126
