@@ -369,8 +369,6 @@
     <string name="zivpn_clash_yaml">Clash YAML Config</string>
     <string name="zivpn_mtu">VPN MTU</string>
     <string name="zivpn_mtu_summary">Set tunnel MTU (range 1280-9000)</string>
-    <string name="zivpn_wakelock">Enable WakeLock</string>
-    <string name="zivpn_wakelock_summary">Keep the service alive even when the screen is off or RAM is low</string>
     <string name="zivpn_copy">Copy Link</string>
     <string name="zivpn_import_success">Profile imported successfully</string>
     <string name="zivpn_import_invalid">Invalid profile link in clipboard</string>

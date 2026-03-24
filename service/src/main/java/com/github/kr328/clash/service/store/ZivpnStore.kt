@@ -67,11 +67,6 @@ class ZivpnStore(context: Context) {
         defaultValue = ""
     )
 
-    var wakeLock: Boolean by store.boolean(
-        key = "zivpn_wakelock",
-        defaultValue = true
-    )
-
     var mtu: Int by store.int(
         key = "zivpn_mtu",
         defaultValue = 9000

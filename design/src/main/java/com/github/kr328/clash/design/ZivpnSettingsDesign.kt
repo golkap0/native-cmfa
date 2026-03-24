@@ -181,12 +181,6 @@ class ZivpnSettingsDesign(
                 placeholder = R.string.zivpn_mtu_summary
             )
 
-            switch(
-                value = store::wakeLock,
-                icon = R.drawable.ic_baseline_info,
-                title = R.string.zivpn_wakelock,
-                summary = R.string.zivpn_wakelock_summary
-            )
         }
 
         binding.content.addView(screen.root)
