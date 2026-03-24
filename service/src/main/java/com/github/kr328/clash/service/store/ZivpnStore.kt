@@ -33,7 +33,7 @@ class ZivpnStore(context: Context) {
 
     var coreCount: Int by store.int(
         key = "zivpn_core_count",
-        defaultValue = 4
+        defaultValue = 2
     )
     
     // Comma separated ranges
@@ -65,11 +65,6 @@ class ZivpnStore(context: Context) {
     var clashYaml: String by store.string(
         key = "zivpn_clash_yaml",
         defaultValue = ""
-    )
-
-    var wakeLock: Boolean by store.boolean(
-        key = "zivpn_wakelock",
-        defaultValue = true
     )
 
     var mtu: Int by store.int(
