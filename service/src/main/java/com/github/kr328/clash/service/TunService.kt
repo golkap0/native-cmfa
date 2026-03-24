@@ -1,6 +1,7 @@
 package com.github.kr328.clash.service
 
 import android.annotation.TargetApi
+import android.app.ActivityManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.ProxyInfo
@@ -84,15 +85,21 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
     private val coreProcesses = mutableListOf<Process>()
 
     private fun startProcessLogger(process: Process, tag: String) {
-        Thread {
-            try {
-                process.inputStream.bufferedReader().use { reader ->
-                    reader.forEachLine { Log.i("[$tag] $it") }
+        if (BuildConfig.DEBUG) {
+            Thread {
+                try {
+                    process.inputStream.bufferedReader().use { reader ->
+                        reader.forEachLine { Log.i("[$tag] $it") }
+                    }
+                } catch (e: java.io.IOException) {
+                    // Process destroyed, ignore interruption
                 }
-            } catch (e: java.io.IOException) {
-                // Process destroyed, ignore interruption
-            }
-        }.start()
+            }.apply {
+                name = "ZIVPN-$tag-out"
+                isDaemon = true
+            }.start()
+        }
+
         Thread {
             try {
                 process.errorStream.bufferedReader().use { reader ->
@@ -101,7 +108,41 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             } catch (e: java.io.IOException) {
                 // Process destroyed, ignore interruption
             }
+        }.apply {
+            name = "ZIVPN-$tag-err"
+            isDaemon = true
         }.start()
+    }
+
+    private data class CorePlan(
+        val configured: Int,
+        val effective: Int,
+        val powerSave: Boolean,
+        val lowRam: Boolean,
+        val lowMemory: Boolean
+    )
+
+    private fun computeCorePlan(store: com.github.kr328.clash.service.store.ZivpnStore): CorePlan {
+        val configured = store.coreCount.coerceAtLeast(1)
+        val powerManager = getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
+        val activityManager = getSystemService(android.content.Context.ACTIVITY_SERVICE) as ActivityManager
+        val memoryInfo = ActivityManager.MemoryInfo().also { activityManager.getMemoryInfo(it) }
+
+        val powerSave = powerManager.isPowerSaveMode
+        val lowRam = activityManager.isLowRamDevice
+        val lowMemory = memoryInfo.lowMemory
+
+        var effective = configured
+        if (powerSave) effective = effective.coerceAtMost(2)
+        if (lowRam || lowMemory) effective = effective.coerceAtMost(1)
+
+        return CorePlan(
+            configured = configured,
+            effective = effective.coerceAtLeast(1),
+            powerSave = powerSave,
+            lowRam = lowRam,
+            lowMemory = lowMemory
+        )
     }
 
     private fun startZivpnCores() {
@@ -120,19 +161,15 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         val recvWindowConn = zivpnStore.recvwindowconn
         val upMbps = zivpnStore.up
         val downMbps = zivpnStore.down
-        val configuredCoreCount = zivpnStore.coreCount
-        val powerManager = getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
-        val isPowerSave = powerManager.isPowerSaveMode
-        val coreCount = (
-            if (isPowerSave) configuredCoreCount.coerceAtMost(2) else configuredCoreCount
-        ).coerceAtLeast(1)
+        val corePlan = computeCorePlan(zivpnStore)
+        val coreCount = corePlan.effective
         
         // MATCH MAGISK SCRIPT: dynamic Instances (1080+)
         val ports = (0 until coreCount).map { 1080 + it }
         val ranges = zivpnStore.portRanges.split(",").filter { it.isNotBlank() }.take(coreCount)
 
         Log.d(
-            "ZIVPN: Starting $coreCount Hysteria Cores (configured=$configuredCoreCount, powerSave=$isPowerSave) with Host: $serverHost"
+            "ZIVPN: Starting $coreCount Hysteria Cores (configured=${corePlan.configured}, powerSave=${corePlan.powerSave}, lowRam=${corePlan.lowRam}, lowMemory=${corePlan.lowMemory}) with Host: $serverHost"
         )
 
         try {
@@ -176,6 +213,10 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                 startProcessLogger(process, "ZIVPN-Core-$i")
                 
                 tunnels.add("127.0.0.1:$port")
+            }
+
+            if (tunnels.isEmpty()) {
+                throw IllegalStateException("No tunnel cores were started")
             }
             
             val lbArgs = mutableListOf(libLoad, "-lport", "7777", "-tunnel")

@@ -33,7 +33,7 @@ class ZivpnStore(context: Context) {
 
     var coreCount: Int by store.int(
         key = "zivpn_core_count",
-        defaultValue = 4
+        defaultValue = 2
     )
     
     // Comma separated ranges
