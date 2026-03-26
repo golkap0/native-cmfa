@@ -1,6 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="PluralsCandidate">
     <string name="app_name">ZIVPN Native</string>
     <string name="launch_name_alpha">Clash Meta Alpha</string>
+    <string name="launch_name_meta">Clash Meta</string>
     <string name="application_name_meta">Clash Meta for Android</string>
     <string name="application_name_alpha">Clash Meta for Android Alpha</string>
 
@@ -349,8 +350,8 @@
     <string name="import_from_qr_no_permission">Camera access is restricted. Please enable it in Settings.</string>
     <string name="import_from_qr_exception">An unhandled system exception occurred.</string>
 
-    <string name="zivpn_settings">ZIVPN Native Settings</string>
-    <string name="zivpn_core_count">ZI CORE</string>
+    <string name="zivpn_settings">Hysteria Settings</string>
+    <string name="zivpn_core_count">HY CORE</string>
     <string name="zivpn_server_profiles">Server Profiles</string>
     <string name="zivpn_add_profile">Add Profile</string>
     <string name="zivpn_edit_profile">Edit Profile</string>
@@ -362,13 +363,11 @@
     <string name="zivpn_ports">Port Ranges</string>
     <string name="zivpn_ports_summary">Comma separated ranges (e.g. 6000-7750,7751-9500)</string>
 
-    <string name="zivpn_recv_window">Receive Window (Hysteria)</string>
-    <string name="zivpn_recv_window_conn">Receive Window Conn (Hysteria)</string>
+    <string name="zivpn_recv_window">Receive Window</string>
+    <string name="zivpn_recv_window_conn">Receive Window Conn</string>
     <string name="zivpn_up">Upload Speed (e.g. 50 Mbps)</string>
     <string name="zivpn_down">Download Speed (e.g. 50 Mbps)</string>
     <string name="zivpn_clash_yaml">Clash YAML Config</string>
-    <string name="zivpn_wakelock">Enable WakeLock</string>
-    <string name="zivpn_wakelock_summary">Keep the service alive even when the screen is off or RAM is low</string>
     <string name="zivpn_copy">Copy Link</string>
     <string name="zivpn_import_success">Profile imported successfully</string>
     <string name="zivpn_import_invalid">Invalid profile link in clipboard</string>

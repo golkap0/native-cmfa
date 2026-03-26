@@ -26,12 +26,12 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         get() = this
 
     private var reason: String? = null
-    private var wakeLock: android.os.PowerManager.WakeLock? = null
 
     private val runtime = clashRuntime {
         val store = ServiceStore(self)
 
         val close = install(CloseModule(self))
+        val hysteria = install(HysteriaModule(self))
         val tun = install(TunModule(self))
         val config = install(ConfigurationModule(self))
         val network = install(NetworkObserveModule(self))
@@ -46,6 +46,8 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         install(SuspendModule(self))
 
         try {
+            runCatching { withTimeout(5000) { hysteria.waitReady() } }
+
             tun.open()
 
             while (isActive) {
@@ -82,132 +84,13 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         }
     }
 
-    private val coreProcesses = mutableListOf<Process>()
-
-    private fun startProcessLogger(process: Process, tag: String) {
-        Thread {
-            try {
-                process.inputStream.bufferedReader().use { reader ->
-                    reader.forEachLine { Log.i("[$tag] $it") }
-                }
-            } catch (e: java.io.IOException) {
-                // Process destroyed, ignore interruption
-            }
-        }.start()
-        Thread {
-            try {
-                process.errorStream.bufferedReader().use { reader ->
-                    reader.forEachLine { Log.e("[$tag] $it") }
-                }
-            } catch (e: java.io.IOException) {
-                // Process destroyed, ignore interruption
-            }
-        }.start()
-    }
-
-    private fun startZivpnCores() {
-        val nativeDir = applicationInfo.nativeLibraryDir
-        val binDir = cacheDir.resolve("bin")
-        binDir.mkdirs()
-
-        val libUz = "$nativeDir/libuz_core.so"
-        val libLoad = "$nativeDir/libload_core.so"
-        
-        val zivpnStore = com.github.kr328.clash.service.store.ZivpnStore(this)
-        val serverHost = zivpnStore.serverHost
-        val pass = zivpnStore.serverPass
-        val obfs = zivpnStore.serverObfs
-        val recvWindow = zivpnStore.recvwindow
-        val recvWindowConn = zivpnStore.recvwindowconn
-        val upMbps = zivpnStore.up
-        val downMbps = zivpnStore.down
-        val coreCount = zivpnStore.coreCount
-        
-        // MATCH MAGISK SCRIPT: dynamic Instances (1080+)
-        val ports = (0 until coreCount).map { 1080 + it }
-        val ranges = zivpnStore.portRanges.split(",").filter { it.isNotBlank() }.take(coreCount)
-
-        Log.d("ZIVPN: Starting $coreCount Hysteria Cores (Magisk Style) with Host: $serverHost")
-
-        try {
-            val tunnels = mutableListOf<String>()
-            
-            val shouldInclude = { v: String ->
-                val t = v.trim().lowercase()
-                t != "0" && t != "0 mbps" && t.isNotBlank()
-            }
-
-            for (i in 0 until coreCount) {
-                val port = ports[i]
-                val range = if (i < ranges.size) ranges[i] else zivpnStore.portRanges // Fallback to full range
-                
-                val config = JSONObject()
-                config.put("server", "$serverHost:$range")
-                config.put("obfs", obfs)
-                config.put("auth", pass)
-                config.put("socks5", JSONObject().put("listen", "127.0.0.1:$port"))
-                config.put("insecure", true)
-
-                if (shouldInclude(recvWindowConn)) {
-                    config.put("recvwindowconn", recvWindowConn.trim().toLongOrNull() ?: recvWindowConn.trim())
-                }
-                if (shouldInclude(recvWindow)) {
-                    config.put("recvwindow", recvWindow.trim().toLongOrNull() ?: recvWindow.trim())
-                }
-                if (shouldInclude(upMbps)) {
-                    config.put("up", upMbps.trim())
-                }
-                if (shouldInclude(downMbps)) {
-                    config.put("down", downMbps.trim())
-                }
-
-                val configContent = config.toString()
-                
-                val pb = ProcessBuilder(libUz, "-s", obfs, "--config", configContent)
-                pb.environment()["LD_LIBRARY_PATH"] = nativeDir
-                val process = pb.start()
-                coreProcesses.add(process)
-                startProcessLogger(process, "ZIVPN-Core-$i")
-                
-                tunnels.add("127.0.0.1:$port")
-            }
-            
-            val lbArgs = mutableListOf(libLoad, "-lport", "7777", "-tunnel")
-            lbArgs.addAll(tunnels)
-            val lbPb = ProcessBuilder(lbArgs)
-            lbPb.environment()["LD_LIBRARY_PATH"] = nativeDir
-            val lbProcess = lbPb.start()
-            coreProcesses.add(lbProcess)
-            startProcessLogger(lbProcess, "ZIVPN-LB")
-            
-            Log.i("ZIVPN: ZIVPN Native Cores ($coreCount instances + LB) started successfully")
-        } catch (e: Exception) {
-            Log.e("ZIVPN: Failed to start ZIVPN Cores: ${e.message}", e)
-        }
-    }
-
-    private fun stopZivpnCores() {
-        coreProcesses.forEach { it.destroy() }
-        coreProcesses.clear()
-        Log.i("ZIVPN Native Cores stopped")
-    }
-
     override fun onCreate() {
         super.onCreate()
-
-        val zivpnStore = com.github.kr328.clash.service.store.ZivpnStore(this)
-        if (zivpnStore.wakeLock) {
-            val powerManager = getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
-            wakeLock = powerManager.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "ZIVPN:ServiceWakeLock")
-            wakeLock?.acquire(10*60*60*1000L /*10 hours limit*/)
-        }
 
         if (StatusProvider.serviceRunning)
             return stopSelf()
 
         StatusProvider.serviceRunning = true
-
-        startZivpnCores()
 
         StaticNotificationModule.createNotificationChannel(this)
         StaticNotificationModule.notifyLoadingNotification(this)
@@ -222,15 +105,9 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
     }
 
     override fun onDestroy() {
-        if (wakeLock?.isHeld == true) {
-            wakeLock?.release()
-        }
-        
         TunModule.requestStop()
 
         StatusProvider.serviceRunning = false
-
-        stopZivpnCores()
 
         sendClashStopped(reason)
 
