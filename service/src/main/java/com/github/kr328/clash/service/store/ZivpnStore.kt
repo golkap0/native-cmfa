@@ -16,6 +16,11 @@ class ZivpnStore(context: Context) {
             .asStoreProvider()
     )
 
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+    }
+
     var serverHost: String by store.string(
         key = "zivpn_server_host",
         defaultValue = ""
@@ -79,14 +84,14 @@ class ZivpnStore(context: Context) {
 
     fun getProfiles(): List<ZivpnServerProfile> {
         return try {
-            Json.decodeFromString(ListSerializer(ZivpnServerProfile.serializer()), serverProfiles)
+            json.decodeFromString(ListSerializer(ZivpnServerProfile.serializer()), serverProfiles)
         } catch (e: Exception) {
             emptyList()
         }
     }
 
     fun setProfiles(profiles: List<ZivpnServerProfile>) {
-        serverProfiles = Json.encodeToString(ListSerializer(ZivpnServerProfile.serializer()), profiles)
+        serverProfiles = json.encodeToString(ListSerializer(ZivpnServerProfile.serializer()), profiles)
     }
 
     init {

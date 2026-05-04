@@ -104,7 +104,6 @@ suspend fun Context.requestZivpnServerProfileInput(
         val binding = DialogZivpnServerProfileBinding
             .inflate(layoutInflater, this.root, false)
 
-        binding.nameField.setText(initial?.name)
         binding.hostField.setText(initial?.host)
         binding.passField.setText(initial?.pass)
 
@@ -115,7 +114,6 @@ suspend fun Context.requestZivpnServerProfileInput(
             .setPositiveButton(R.string.ok) { _, _ ->
                 ctx.resume(
                     com.github.kr328.clash.service.model.ZivpnServerProfile(
-                        binding.nameField.text?.toString() ?: "",
                         binding.hostField.text?.toString() ?: "",
                         binding.passField.text?.toString() ?: ""
                     )

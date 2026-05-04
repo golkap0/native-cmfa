@@ -191,9 +191,9 @@ class ZivpnSettingsDesign(
         val profiles = store.getProfiles().toMutableList()
         val adapter = EditableTextListAdapter(context, profiles, object : TextAdapter<ZivpnServerProfile> {
             override fun from(value: ZivpnServerProfile): String {
-                return if (value.name.isBlank()) "${value.host}@${value.pass}" else "${value.name} (${value.host}@${value.pass})"
+                return "${value.host}@${value.pass}"
             }
-            override fun to(text: String): ZivpnServerProfile = ZivpnServerProfile(text, "", "")
+            override fun to(text: String): ZivpnServerProfile = ZivpnServerProfile(text, "")
         })
 
         adapter.onCopy = { profile ->
@@ -225,25 +225,32 @@ class ZivpnSettingsDesign(
             importFromClipboard = {
                 val clipboard = context.getSystemService<ClipboardManager>()
                 val text = clipboard?.primaryClip?.getItemAt(0)?.text?.toString() ?: ""
-                if (text.startsWith("zivpn://")) {
-                    val address = text.substring(8)
-                    val separatorIndex = address.lastIndexOf('@')
-                    val (host, pass) = if (separatorIndex != -1) {
-                        address.substring(0, separatorIndex) to address.substring(separatorIndex + 1)
-                    } else {
-                        address to ""
+
+                val lines = text.split("\n").filter { it.isNotBlank() }
+                var importedCount = 0
+
+                lines.forEach { line ->
+                    val cleanLine = line.trim()
+                    if (cleanLine.startsWith("zivpn://")) {
+                        val address = cleanLine.substring(8)
+                        val separatorIndex = address.lastIndexOf('@')
+                        val (host, pass) = if (separatorIndex != -1) {
+                            address.substring(0, separatorIndex) to address.substring(separatorIndex + 1)
+                        } else {
+                            address to ""
+                        }
+                        if (host.isNotBlank()) {
+                            val newProfile = ZivpnServerProfile(host, pass)
+                            profiles.add(newProfile)
+                            importedCount++
+                        }
                     }
-                    if (host.isNotBlank()) {
-                        val newProfile = ZivpnServerProfile("", host, pass)
-                        profiles.add(newProfile)
-                        adapter.notifyItemInserted(profiles.size - 1)
-                        launch {
-                            showToast(R.string.zivpn_import_success, ToastDuration.Short)
-                        }
-                    } else {
-                        launch {
-                            showToast(R.string.zivpn_import_invalid, ToastDuration.Short)
-                        }
+                }
+
+                if (importedCount > 0) {
+                    adapter.notifyItemRangeInserted(profiles.size - importedCount, importedCount)
+                    launch {
+                        showToast(R.string.zivpn_import_success, ToastDuration.Short)
                     }
                 } else {
                     launch {
@@ -272,7 +279,7 @@ class ZivpnSettingsDesign(
         if (profiles.isEmpty()) return
 
         val names = profiles.map {
-            if (it.name.isBlank()) "${it.host}@${it.pass}" else "${it.name} (${it.host}@${it.pass})"
+            "${it.host}@${it.pass}"
         }.toTypedArray()
 
         val selectedIndex = suspendCancellableCoroutine<Int> { ctx ->
@@ -296,7 +303,7 @@ class ZivpnSettingsDesign(
             hostPref?.text = selected.host
             passPref?.text = selected.pass
 
-            val displayName = if (selected.name.isBlank()) "${selected.host}@${selected.pass}" else selected.name
+            val displayName = "${selected.host}@${selected.pass}"
             launch {
                 showToast(context.getString(R.string.zivpn_profile_selected, displayName), ToastDuration.Short)
             }
