@@ -1,7 +1,6 @@
 package com.github.kr328.clash.design.preference
 
 import android.content.Context
-import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import com.github.kr328.clash.design.databinding.DialogPreferenceListBinding
 import com.github.kr328.clash.design.dialog.FullScreenDialog
@@ -13,15 +12,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
-enum class EditableListOverlayResult {
+internal enum class EditableListOverlayResult {
     Cancel, Apply, Reset
 }
 
-suspend fun requestEditableListOverlay(
+internal suspend fun requestEditableListOverlay(
     context: Context,
     adapter: RecyclerView.Adapter<*>,
     title: CharSequence,
-    importFromClipboard: (suspend () -> Unit)? = null,
     addNewItem: suspend () -> Unit
 ): EditableListOverlayResult {
     return coroutineScope {
@@ -37,13 +35,6 @@ suspend fun requestEditableListOverlay(
             binding.newView.setOnClickListener {
                 launch {
                     addNewItem()
-                }
-            }
-
-            binding.importView.visibility = if (importFromClipboard != null) View.VISIBLE else View.GONE
-            binding.importView.setOnClickListener {
-                launch {
-                    importFromClipboard?.invoke()
                 }
             }
 

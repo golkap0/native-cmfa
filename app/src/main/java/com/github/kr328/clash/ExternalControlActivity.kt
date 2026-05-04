@@ -44,7 +44,7 @@ class ExternalControlActivity : Activity(), CoroutineScope by MainScope() {
                             patch(it, name, url, 0)
                         }
                     }
-                    // startActivity(PropertiesActivity::class.intent.setUUID(uuid)) // Deleted
+                    startActivity(PropertiesActivity::class.intent.setUUID(uuid))
                     finish()
                 }
             }

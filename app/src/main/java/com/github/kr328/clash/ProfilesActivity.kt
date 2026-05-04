@@ -41,7 +41,7 @@ class ProfilesActivity : BaseActivity<ProfilesDesign>() {
                 design.requests.onReceive {
                     when (it) {
                         ProfilesDesign.Request.Create ->
-                            design?.showToast(R.string.disabled, ToastDuration.Short) // Disabled
+                            startActivity(NewProfileActivity::class.intent)
                         ProfilesDesign.Request.UpdateAll ->
                             withProfile {
                                 try {
@@ -61,7 +61,7 @@ class ProfilesActivity : BaseActivity<ProfilesDesign>() {
                         is ProfilesDesign.Request.Delete ->
                             withProfile { delete(it.profile.uuid) }
                         is ProfilesDesign.Request.Edit ->
-                            design?.showToast(R.string.disabled, ToastDuration.Short) // Disabled
+                            startActivity(PropertiesActivity::class.intent.setUUID(it.profile.uuid))
                         is ProfilesDesign.Request.Active -> {
                             withProfile {
                                 if (it.profile.imported)
@@ -71,7 +71,9 @@ class ProfilesActivity : BaseActivity<ProfilesDesign>() {
                             }
                         }
                         is ProfilesDesign.Request.Duplicate -> {
-                            design?.showToast(R.string.disabled, ToastDuration.Short) // Disabled
+                            val uuid = withProfile { clone(it.profile.uuid) }
+
+                            startActivity(PropertiesActivity::class.intent.setUUID(uuid))
                         }
                     }
                 }
@@ -115,7 +117,11 @@ class ProfilesActivity : BaseActivity<ProfilesDesign>() {
             design?.showToast(
                 getString(R.string.toast_profile_updated_failed, name, reason),
                 ToastDuration.Long
-            )
+            ){
+                setAction(R.string.edit) {
+                    startActivity(PropertiesActivity::class.intent.setUUID(uuid))
+                }
+            }
         }
     }
 }

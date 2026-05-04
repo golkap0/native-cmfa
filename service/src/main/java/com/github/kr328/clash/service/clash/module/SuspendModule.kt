@@ -12,8 +12,9 @@ import kotlinx.coroutines.withContext
 
 class SuspendModule(service: Service) : Module<Unit>(service) {
     override suspend fun run() {
-        // FORCE KEEP ALIVE
-        Clash.suspendCore(false)
+        val interactive = service.getSystemService<PowerManager>()?.isInteractive ?: true
+
+        Clash.suspendCore(!interactive)
 
         val screenToggle = receiveBroadcast(false, Channel.CONFLATED) {
             addAction(Intent.ACTION_SCREEN_ON)
@@ -29,10 +30,9 @@ class SuspendModule(service: Service) : Module<Unit>(service) {
                         Log.d("Clash resumed")
                     }
                     Intent.ACTION_SCREEN_OFF -> {
-                        // FORCE KEEP ALIVE: Do not suspend core when screen is off
-                        Clash.suspendCore(false) 
+                        Clash.suspendCore(true)
 
-                        Log.d("Clash kept alive (Screen Off)")
+                        Log.d("Clash suspended")
                     }
                     else -> {
                         // unreachable

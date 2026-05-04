@@ -4,8 +4,6 @@ import com.android.build.gradle.AppExtension
 import com.android.build.gradle.BaseExtension
 import java.net.URL
 import java.util.*
-import java.nio.file.Files
-import java.util.Base64
 
 buildscript {
     repositories {
@@ -60,22 +58,26 @@ subprojects {
             minSdk = 21
             targetSdk = 35
 
-            versionName = "2.11.22-zivpn-stable"
-            versionCode = 211022
+            versionName = "2.11.21"
+            versionCode = 211021
 
             resValue("string", "release_name", "v$versionName")
             resValue("integer", "release_code", "$versionCode")
 
+            ndk {
+                abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+            }
+
             externalNativeBuild {
                 cmake {
-                    abiFilters("arm64-v8a", "armeabi-v7a")
+                    abiFilters("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
                 }
             }
 
             if (!isApp) {
                 consumerProguardFiles("consumer-rules.pro")
             } else {
-                project.setProperty("archivesBaseName", "cmfa-$versionName")
+                setProperty("archivesBaseName", "cmfa-$versionName")
             }
         }
 
@@ -106,10 +108,8 @@ subprojects {
 
                 buildConfigField("boolean", "PREMIUM", "Boolean.parseBoolean(\"false\")")
 
-                if (isApp) {
-                    resValue("string", "launch_name", "@string/launch_name_alpha")
-                    resValue("string", "application_name", "@string/application_name_alpha")
-                }
+                resValue("string", "launch_name", "@string/launch_name_alpha")
+                resValue("string", "application_name", "@string/application_name_alpha")
 
                 if (isApp && !removeSuffix) {
                     applicationIdSuffix = ".alpha"
@@ -125,10 +125,8 @@ subprojects {
 
                 buildConfigField("boolean", "PREMIUM", "Boolean.parseBoolean(\"false\")")
 
-                if (isApp) {
-                    resValue("string", "launch_name", "@string/launch_name_meta")
-                    resValue("string", "application_name", "@string/application_name_meta")
-                }
+                resValue("string", "launch_name", "@string/launch_name_meta")
+                resValue("string", "application_name", "@string/application_name_meta")
 
                 if (isApp && !removeSuffix) {
                     applicationIdSuffix = ".meta"
@@ -157,20 +155,6 @@ subprojects {
                     storePassword = prop.getProperty("keystore.password")!!
                     keyAlias = prop.getProperty("key.alias")!!
                     keyPassword = prop.getProperty("key.password")!!
-                }
-            } else if (System.getenv("SIGNING_KEY_STORE_BASE64") != null) {
-                create("release") {
-                    try {
-                        val tmpKeystore = Files.createTempFile("keystore", ".jks").toFile()
-                        tmpKeystore.writeBytes(Base64.getDecoder().decode(System.getenv("SIGNING_KEY_STORE_BASE64").trim()))
-                        
-                        storeFile = tmpKeystore
-                        storePassword = System.getenv("SIGNING_STORE_PASSWORD")
-                        keyAlias = System.getenv("SIGNING_KEY_ALIAS")
-                        keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
-                    } catch (e: Exception) {
-                        println("Failed to setup signing from env: ${e.message}")
-                    }
                 }
             }
         }
@@ -202,9 +186,9 @@ subprojects {
             splits {
                 abi {
                     isEnable = true
-                    isUniversalApk = false
+                    isUniversalApk = true
                     reset()
-                    include("arm64-v8a", "armeabi-v7a")
+                    include("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
                 }
             }
         }

@@ -26,33 +26,6 @@ import com.github.kr328.clash.design.R
 
 class MainActivity : BaseActivity<MainDesign>() {
     override suspend fun main() {
-        // --- AUTO INIT ZIVPN PROFILE ---
-        val ZIVPN_UUID = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")
-        val store = com.github.kr328.clash.service.store.ServiceStore(this)
-        val dao = com.github.kr328.clash.service.data.Database.database.openImportedDao()
-        
-        if (!dao.exists(ZIVPN_UUID)) {
-            val zivpnProfile = com.github.kr328.clash.service.data.Imported(
-                uuid = ZIVPN_UUID,
-                name = "ZIVPN Native",
-                type = com.github.kr328.clash.service.model.Profile.Type.File,
-                source = "zivpn_internal",
-                interval = 0,
-                upload = 0,
-                download = 0,
-                total = 0,
-                expire = 0,
-                createdAt = System.currentTimeMillis()
-            )
-            dao.insert(zivpnProfile)
-            store.activeProfile = ZIVPN_UUID
-        }
-        
-        if (store.activeProfile == null) {
-            store.activeProfile = ZIVPN_UUID
-        }
-        // -------------------------------
-
         val design = MainDesign(this)
 
         setContentDesign(design)
@@ -84,6 +57,8 @@ class MainActivity : BaseActivity<MainDesign>() {
                             startActivity(ProxyActivity::class.intent)
                         MainDesign.Request.OpenProfiles ->
                             startActivity(ProfilesActivity::class.intent)
+                        MainDesign.Request.OpenProviders ->
+                            startActivity(ProvidersActivity::class.intent)
                         MainDesign.Request.OpenLogs -> {
                             if (LogcatService.running) {
                                 startActivity(LogcatActivity::class.intent)
@@ -91,11 +66,12 @@ class MainActivity : BaseActivity<MainDesign>() {
                                 startActivity(LogsActivity::class.intent)
                             }
                         }
-                        MainDesign.Request.OpenZivpnSettings ->
-                            startActivity(ZivpnSettingsActivity::class.intent)
+                        MainDesign.Request.OpenSettings ->
+                            startActivity(SettingsActivity::class.intent)
+                        MainDesign.Request.OpenHelp ->
+                            startActivity(HelpActivity::class.intent)
                         MainDesign.Request.OpenAbout ->
                             design.showAbout(queryAppVersionName())
-                        else -> Unit // Handle unused requests
                     }
                 }
                 if (clashRunning) {

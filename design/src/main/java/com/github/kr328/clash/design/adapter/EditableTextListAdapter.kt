@@ -12,17 +12,14 @@ class EditableTextListAdapter<T>(
     val values: MutableList<T>,
     private val adapter: TextAdapter<T>,
 ) : RecyclerView.Adapter<EditableTextListAdapter.Holder>() {
-    var onEdit: ((T) -> Unit)? = null
-    var onCopy: ((T) -> Unit)? = null
-
     class Holder(val binding: AdapterEditableTextListBinding) :
         RecyclerView.ViewHolder(binding.root)
 
     fun addElement(text: String) {
         val value = adapter.to(text)
 
+        notifyItemInserted(values.size)
         values.add(value)
-        notifyItemInserted(values.size - 1)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
@@ -36,12 +33,6 @@ class EditableTextListAdapter<T>(
         val current = values[position]
 
         holder.binding.textView.text = adapter.from(current)
-        holder.binding.textView.setOnClickListener {
-            onEdit?.invoke(current)
-        }
-        holder.binding.copyView.setOnClickListener {
-            onCopy?.invoke(current)
-        }
         holder.binding.deleteView.setOnClickListener {
             val index = values.indexOf(current)
 
