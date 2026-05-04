@@ -22,7 +22,6 @@ suspend fun requestEditableListOverlay(
     adapter: RecyclerView.Adapter<*>,
     title: CharSequence,
     importFromClipboard: (() -> Unit)? = null,
-    exportToClipboard: (() -> Unit)? = null,
     addNewItem: suspend () -> Unit
 ): EditableListOverlayResult {
     return coroutineScope {
@@ -45,13 +44,6 @@ suspend fun requestEditableListOverlay(
                 binding.importView.visibility = View.VISIBLE
                 binding.importView.setOnClickListener {
                     importFromClipboard()
-                }
-            }
-
-            if (exportToClipboard != null) {
-                binding.exportView.visibility = View.VISIBLE
-                binding.exportView.setOnClickListener {
-                    exportToClipboard()
                 }
             }
 

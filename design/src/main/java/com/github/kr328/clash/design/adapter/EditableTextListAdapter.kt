@@ -1,6 +1,7 @@
 package com.github.kr328.clash.design.adapter
 
 import android.content.Context
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.github.kr328.clash.design.databinding.AdapterEditableTextListBinding
@@ -37,6 +38,16 @@ class EditableTextListAdapter<T>(
         val current = values[position]
 
         holder.binding.textView.text = adapter.from(current)
+
+        if (onCopy != null) {
+            holder.binding.copyView.visibility = View.VISIBLE
+            holder.binding.copyView.setOnClickListener {
+                onCopy?.invoke(current)
+            }
+        } else {
+            holder.binding.copyView.visibility = View.GONE
+        }
+
         holder.binding.deleteView.setOnClickListener {
             val index = values.indexOf(current)
 
@@ -45,12 +56,9 @@ class EditableTextListAdapter<T>(
                 notifyItemRemoved(index)
             }
         }
+
         holder.binding.root.setOnClickListener {
             onEdit?.invoke(current)
-        }
-        holder.binding.root.setOnLongClickListener {
-            onCopy?.invoke(current)
-            true
         }
     }
 

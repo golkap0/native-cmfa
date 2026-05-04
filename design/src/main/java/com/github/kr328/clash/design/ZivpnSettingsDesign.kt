@@ -201,7 +201,7 @@ class ZivpnSettingsDesign(
             val data = ClipData.newPlainText("zivpn_profile", link)
             context.getSystemService<ClipboardManager>()?.setPrimaryClip(data)
             launch {
-                showToast(R.string.zivpn_copy, ToastDuration.Short)
+                showToast(R.string.copied, ToastDuration.Short)
             }
         }
 
@@ -256,14 +256,6 @@ class ZivpnSettingsDesign(
                     launch {
                         showToast(R.string.zivpn_import_invalid, ToastDuration.Short)
                     }
-                }
-            },
-            exportToClipboard = {
-                val text = profiles.joinToString("\n") { "zivpn://${it.host}@${it.pass}" }
-                val data = ClipData.newPlainText("zivpn_profiles", text)
-                context.getSystemService<ClipboardManager>()?.setPrimaryClip(data)
-                launch {
-                    showToast(R.string.copied, ToastDuration.Short)
                 }
             }
         ) {

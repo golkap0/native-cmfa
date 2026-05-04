@@ -38,18 +38,6 @@
                     android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6" />
 
                 <ImageView
-                    android:id="@+id/export_view"
-                    android:layout_width="@dimen/item_tailing_component_size"
-                    android:layout_height="@dimen/item_tailing_component_size"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:clickable="true"
-                    android:contentDescription="@string/export_to_clipboard"
-                    android:focusable="true"
-                    android:padding="@dimen/toolbar_image_action_padding"
-                    android:src="@drawable/ic_baseline_publish"
-                    android:visibility="gone" />
-
-                <ImageView
                     android:id="@+id/import_view"
                     android:layout_width="@dimen/item_tailing_component_size"
                     android:layout_height="@dimen/item_tailing_component_size"
