@@ -19,37 +19,66 @@
             android:layout_height="match_parent"
             android:paddingBottom="@dimen/preference_fullscreen_button_padding">
 
-            <TextView
-                android:id="@+id/title_view"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:id="@+id/header_layout"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_alignTop="@id/new_view"
-                android:layout_alignBottom="@id/new_view"
-                android:layout_alignParentStart="true"
-                android:layout_marginHorizontal="@dimen/item_header_margin"
-                android:layout_toStartOf="@id/new_view"
+                android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6" />
+                android:paddingVertical="@dimen/item_tailing_margin"
+                android:paddingEnd="@dimen/item_tailing_margin">
 
-            <ImageView
-                android:id="@+id/new_view"
-                android:layout_width="@dimen/item_tailing_component_size"
-                android:layout_height="@dimen/item_tailing_component_size"
-                android:layout_alignParentEnd="true"
-                android:layout_margin="@dimen/item_tailing_margin"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:contentDescription="@string/_new"
-                android:focusable="true"
-                android:padding="@dimen/toolbar_image_action_padding"
-                android:src="@drawable/ic_baseline_add" />
+                <TextView
+                    android:id="@+id/title_view"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="@dimen/item_header_margin"
+                    android:gravity="center_vertical"
+                    android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6" />
+
+                <ImageView
+                    android:id="@+id/export_view"
+                    android:layout_width="@dimen/item_tailing_component_size"
+                    android:layout_height="@dimen/item_tailing_component_size"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:contentDescription="@string/export_to_clipboard"
+                    android:focusable="true"
+                    android:padding="@dimen/toolbar_image_action_padding"
+                    android:src="@drawable/ic_baseline_publish"
+                    android:visibility="gone" />
+
+                <ImageView
+                    android:id="@+id/import_view"
+                    android:layout_width="@dimen/item_tailing_component_size"
+                    android:layout_height="@dimen/item_tailing_component_size"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:contentDescription="@string/import_from_clipboard"
+                    android:focusable="true"
+                    android:padding="@dimen/toolbar_image_action_padding"
+                    android:src="@drawable/ic_baseline_cloud_download"
+                    android:visibility="gone" />
+
+                <ImageView
+                    android:id="@+id/new_view"
+                    android:layout_width="@dimen/item_tailing_component_size"
+                    android:layout_height="@dimen/item_tailing_component_size"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:contentDescription="@string/_new"
+                    android:focusable="true"
+                    android:padding="@dimen/toolbar_image_action_padding"
+                    android:src="@drawable/ic_baseline_add" />
+            </LinearLayout>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/main_list"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_above="@id/ok_view"
-                android:layout_below="@id/title_view" />
+                android:layout_below="@id/header_layout" />
 
             <Button
                 android:id="@+id/reset_view"

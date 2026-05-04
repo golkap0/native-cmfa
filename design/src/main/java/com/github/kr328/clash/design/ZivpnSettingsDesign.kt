@@ -257,6 +257,14 @@ class ZivpnSettingsDesign(
                         showToast(R.string.zivpn_import_invalid, ToastDuration.Short)
                     }
                 }
+            },
+            exportToClipboard = {
+                val text = profiles.joinToString("\n") { "zivpn://${it.host}@${it.pass}" }
+                val data = ClipData.newPlainText("zivpn_profiles", text)
+                context.getSystemService<ClipboardManager>()?.setPrimaryClip(data)
+                launch {
+                    showToast(R.string.copied, ToastDuration.Short)
+                }
             }
         ) {
             val newProfile = context.requestZivpnServerProfileInput(null, context.getString(R.string.zivpn_add_profile))
