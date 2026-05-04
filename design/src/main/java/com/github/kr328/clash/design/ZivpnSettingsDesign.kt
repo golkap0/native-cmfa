@@ -20,6 +20,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 
 class ZivpnSettingsDesign(
@@ -196,10 +197,10 @@ class ZivpnSettingsDesign(
         })
 
         adapter.onCopy = { profile ->
+            val link = "zivpn://${profile.host}@${profile.pass}"
+            val data = ClipData.newPlainText("zivpn_profile", link)
+            context.getSystemService<ClipboardManager>()?.setPrimaryClip(data)
             launch {
-                val link = "zivpn://${profile.host}@${profile.pass}"
-                val data = ClipData.newPlainText("zivpn_profile", link)
-                context.getSystemService<ClipboardManager>()?.setPrimaryClip(data)
                 showToast(R.string.zivpn_copy, ToastDuration.Short)
             }
         }
@@ -236,12 +237,18 @@ class ZivpnSettingsDesign(
                         val newProfile = ZivpnServerProfile("", host, pass)
                         profiles.add(newProfile)
                         adapter.notifyItemInserted(profiles.size - 1)
-                        showToast(R.string.zivpn_import_success, ToastDuration.Short)
+                        launch {
+                            showToast(R.string.zivpn_import_success, ToastDuration.Short)
+                        }
                     } else {
-                        showToast(R.string.zivpn_import_invalid, ToastDuration.Short)
+                        launch {
+                            showToast(R.string.zivpn_import_invalid, ToastDuration.Short)
+                        }
                     }
                 } else {
-                    showToast(R.string.zivpn_import_invalid, ToastDuration.Short)
+                    launch {
+                        showToast(R.string.zivpn_import_invalid, ToastDuration.Short)
+                    }
                 }
             }
         ) {
@@ -290,7 +297,9 @@ class ZivpnSettingsDesign(
             passPref?.text = selected.pass
 
             val displayName = if (selected.name.isBlank()) "${selected.host}@${selected.pass}" else selected.name
-            showToast(context.getString(R.string.zivpn_profile_selected, displayName), ToastDuration.Short)
+            launch {
+                showToast(context.getString(R.string.zivpn_profile_selected, displayName), ToastDuration.Short)
+            }
         }
     }
 }

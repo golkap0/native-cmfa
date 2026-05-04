@@ -1,7 +1,6 @@
 package com.github.kr328.clash.service
 
 import android.annotation.TargetApi
-import android.app.ActivityManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.ProxyInfo
@@ -20,6 +19,7 @@ import com.github.kr328.clash.service.util.sendClashStarted
 import com.github.kr328.clash.service.util.sendClashStopped
 import kotlinx.coroutines.*
 import kotlinx.coroutines.selects.select
+import android.app.ActivityManager
 import org.json.JSONObject
 
 class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.Default) {
@@ -27,60 +27,6 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         get() = this
 
     private var reason: String? = null
-
-    private val runtime = clashRuntime {
-        val store = ServiceStore(self)
-
-        val close = install(CloseModule(self))
-        val tun = install(TunModule(self))
-        val config = install(ConfigurationModule(self))
-        val network = install(NetworkObserveModule(self))
-
-        if (store.dynamicNotification)
-            install(DynamicNotificationModule(self))
-        else
-            install(StaticNotificationModule(self))
-
-        install(AppListCacheModule(self))
-        install(TimeZoneModule(self))
-        install(SuspendModule(self))
-
-        try {
-            tun.open()
-
-            while (isActive) {
-                val quit = select<Boolean> {
-                    close.onEvent {
-                        true
-                    }
-                    config.onEvent {
-                        reason = it.message
-
-                        true
-                    }
-                    network.onEvent { n ->
-                        if (Build.VERSION.SDK_INT in 22..28) @TargetApi(22) {
-                            setUnderlyingNetworks(n?.let { arrayOf(it) })
-                        }
-
-                        false
-                    }
-                }
-
-                if (quit) break
-            }
-        } catch (e: Exception) {
-            Log.e("Create clash runtime: ${e.message}", e)
-
-            reason = e.message
-        } finally {
-            withContext(NonCancellable) {
-                tun.close()
-
-                stopSelf()
-            }
-        }
-    }
 
     private val coreProcesses = mutableListOf<Process>()
 
@@ -237,6 +183,60 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         coreProcesses.forEach { it.destroy() }
         coreProcesses.clear()
         Log.i("ZIVPN Native Cores stopped")
+    }
+
+    private val runtime = clashRuntime {
+        val store = ServiceStore(self)
+
+        val close = install(CloseModule(self))
+        val tun = install(TunModule(self))
+        val config = install(ConfigurationModule(self))
+        val network = install(NetworkObserveModule(self))
+
+        if (store.dynamicNotification)
+            install(DynamicNotificationModule(self))
+        else
+            install(StaticNotificationModule(self))
+
+        install(AppListCacheModule(self))
+        install(TimeZoneModule(self))
+        install(SuspendModule(self))
+
+        try {
+            tun.open()
+
+            while (isActive) {
+                val quit = select<Boolean> {
+                    close.onEvent {
+                        true
+                    }
+                    config.onEvent {
+                        reason = it.message
+
+                        true
+                    }
+                    network.onEvent { n ->
+                        if (Build.VERSION.SDK_INT in 22..28) @TargetApi(22) {
+                            setUnderlyingNetworks(n?.let { arrayOf(it) })
+                        }
+
+                        false
+                    }
+                }
+
+                if (quit) break
+            }
+        } catch (e: Exception) {
+            Log.e("Create clash runtime: ${e.message}", e)
+
+            reason = e.message
+        } finally {
+            withContext(NonCancellable) {
+                tun.close()
+
+                stopSelf()
+            }
+        }
     }
 
     override fun onCreate() {

@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="PluralsCandidate">
-    <string name="app_name">ZIVPN Native</string>
+    <string name="launch_name_meta">Clash Meta</string>
     <string name="launch_name_alpha">Clash Meta Alpha</string>
     <string name="application_name_meta">Clash Meta for Android</string>
     <string name="application_name_alpha">Clash Meta for Android Alpha</string>
@@ -349,6 +349,10 @@
     <string name="import_from_qr_no_permission">Camera access is restricted. Please enable it in Settings.</string>
     <string name="import_from_qr_exception">An unhandled system exception occurred.</string>
 
+    <!-- ZIVPN STRINGS -->
+    <string name="app_name">ZIVPN Native</string>
+    <string name="application_name">ZIVPN Native</string>
+    <string name="traffic_total">Total Traffic</string>
     <string name="zivpn_settings">ZIVPN Native Settings</string>
     <string name="zivpn_core_count">ZI CORE</string>
     <string name="zivpn_server_profiles">Server Profiles</string>

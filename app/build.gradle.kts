@@ -24,11 +24,10 @@ dependencies {
     implementation(libs.androidx.coordinator)
     implementation(libs.androidx.recyclerview)
     implementation(libs.google.material)
+    implementation(libs.quickie.bundled)
     implementation(libs.androidx.activity.ktx)
     
-    // Fix: Room dependency for Database access in MainActivity
     implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
 }
 
 tasks.getByName("clean", type = Delete::class) {
@@ -36,15 +35,3 @@ tasks.getByName("clean", type = Delete::class) {
 }
 
 // GeoIP download task removed to reduce APK size (ZIVPN uses MATCH rule)
-
-afterEvaluate {
-    tasks.forEach {
-        if (it.name.startsWith("assemble")) {
-            // Task dependency removed
-        }
-    }
-}
-
-tasks.getByName("clean", type = Delete::class) {
-    // Assets cleanup removed
-}

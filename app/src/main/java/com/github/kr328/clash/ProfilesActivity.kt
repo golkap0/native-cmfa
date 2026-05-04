@@ -1,15 +1,8 @@
 package com.github.kr328.clash
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import com.github.kr328.clash.common.util.intent
-import com.github.kr328.clash.common.util.setUUID
 import com.github.kr328.clash.common.util.ticker
 import com.github.kr328.clash.design.ProfilesDesign
 import com.github.kr328.clash.design.ui.ToastDuration
-import com.github.kr328.clash.service.model.Profile
 import com.github.kr328.clash.util.withProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
@@ -41,27 +34,15 @@ class ProfilesActivity : BaseActivity<ProfilesDesign>() {
                 design.requests.onReceive {
                     when (it) {
                         ProfilesDesign.Request.Create ->
-                            design?.showToast(R.string.disabled, ToastDuration.Short) // Disabled
+                            Unit // Disabled
                         ProfilesDesign.Request.UpdateAll ->
-                            withProfile {
-                                try {
-                                    queryAll().forEach { p ->
-                                        if (p.imported && p.type != Profile.Type.File)
-                                            update(p.uuid)
-                                    }
-                                }
-                                finally {
-                                    withContext(Dispatchers.Main) {
-                                        design.finishUpdateAll();
-                                    }
-                                }
-                            }
+                            Unit // Disabled
                         is ProfilesDesign.Request.Update ->
                             withProfile { update(it.profile.uuid) }
                         is ProfilesDesign.Request.Delete ->
                             withProfile { delete(it.profile.uuid) }
                         is ProfilesDesign.Request.Edit ->
-                            design?.showToast(R.string.disabled, ToastDuration.Short) // Disabled
+                            Unit // Disabled
                         is ProfilesDesign.Request.Active -> {
                             withProfile {
                                 if (it.profile.imported)
@@ -71,7 +52,7 @@ class ProfilesActivity : BaseActivity<ProfilesDesign>() {
                             }
                         }
                         is ProfilesDesign.Request.Duplicate -> {
-                            design?.showToast(R.string.disabled, ToastDuration.Short) // Disabled
+                            Unit // Disabled
                         }
                     }
                 }

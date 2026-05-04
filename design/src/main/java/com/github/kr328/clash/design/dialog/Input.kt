@@ -7,57 +7,9 @@ import com.github.kr328.clash.design.R
 import com.github.kr328.clash.design.databinding.DialogTextFieldBinding
 import com.github.kr328.clash.design.databinding.DialogZivpnServerProfileBinding
 import com.github.kr328.clash.design.util.*
-import com.github.kr328.clash.service.model.ZivpnServerProfile
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
-
-suspend fun Context.requestZivpnServerProfileInput(
-    initial: ZivpnServerProfile?,
-    title: CharSequence,
-): ZivpnServerProfile? {
-    return suspendCancellableCoroutine {
-        val binding = DialogZivpnServerProfileBinding
-            .inflate(layoutInflater, this.root, false)
-
-        val builder = MaterialAlertDialogBuilder(this)
-            .setTitle(title)
-            .setView(binding.root)
-            .setCancelable(true)
-            .setPositiveButton(R.string.ok) { _, _ ->
-                val name = initial?.name ?: ""
-                val address = binding.hostView.text?.toString() ?: ""
-
-                val separatorIndex = address.lastIndexOf('@')
-                val (host, pass) = if (separatorIndex != -1) {
-                    address.substring(0, separatorIndex) to address.substring(separatorIndex + 1)
-                } else {
-                    address to ""
-                }
-
-                it.resume(ZivpnServerProfile(name, host, pass))
-            }
-            .setNegativeButton(R.string.cancel) { _, _ -> }
-            .setOnDismissListener { _ ->
-                if (!it.isCompleted)
-                    it.resume(initial)
-            }
-
-        val dialog = builder.create()
-
-        it.invokeOnCancellation {
-            dialog.dismiss()
-        }
-
-        dialog.setOnShowListener {
-            if (initial != null) {
-                binding.hostView.setText("${initial.host}@${initial.pass}")
-            }
-        }
-
-        dialog.show()
-    }
-}
 
 suspend fun Context.requestModelTextInput(
     initial: String,
@@ -138,6 +90,47 @@ suspend fun Context.requestModelTextInput(
 
                 requestTextInput()
             }
+        }
+
+        dialog.show()
+    }
+}
+
+suspend fun Context.requestZivpnServerProfileInput(
+    initial: com.github.kr328.clash.service.model.ZivpnServerProfile?,
+    title: CharSequence,
+): com.github.kr328.clash.service.model.ZivpnServerProfile? {
+    return suspendCancellableCoroutine { ctx ->
+        val binding = DialogZivpnServerProfileBinding
+            .inflate(layoutInflater, this.root, false)
+
+        binding.nameField.setText(initial?.name)
+        binding.hostField.setText(initial?.host)
+        binding.passField.setText(initial?.pass)
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(title)
+            .setView(binding.root)
+            .setCancelable(true)
+            .setPositiveButton(R.string.ok) { _, _ ->
+                ctx.resume(
+                    com.github.kr328.clash.service.model.ZivpnServerProfile(
+                        binding.nameField.text?.toString() ?: "",
+                        binding.hostField.text?.toString() ?: "",
+                        binding.passField.text?.toString() ?: ""
+                    )
+                )
+            }
+            .setNegativeButton(R.string.cancel) { _, _ ->
+                ctx.resume(null)
+            }
+            .setOnDismissListener {
+                if (!ctx.isCompleted) ctx.resume(null)
+            }
+            .create()
+
+        ctx.invokeOnCancellation {
+            dialog.dismiss()
         }
 
         dialog.show()
