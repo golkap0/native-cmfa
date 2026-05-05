@@ -23,6 +23,15 @@ import kotlinx.coroutines.selects.select
 import java.util.concurrent.TimeUnit
 
 class DynamicNotificationModule(service: Service) : Module<Unit>(service) {
+    private data class Snapshot(
+        val uploading: String,
+        val downloading: String,
+        val uploaded: String,
+        val downloaded: String,
+    )
+
+    private var lastSnapshot: Snapshot? = null
+
     private val builder = NotificationCompat.Builder(service, StaticNotificationModule.CHANNEL_ID)
         .setSmallIcon(R.drawable.ic_logo_service)
         .setOngoing(true)
@@ -51,6 +60,13 @@ class DynamicNotificationModule(service: Service) : Module<Unit>(service) {
         val downloading = now.trafficDownload()
         val uploaded = total.trafficUpload()
         val downloaded = total.trafficDownload()
+
+        val snapshot = Snapshot(uploading, downloading, uploaded, downloaded)
+        if (snapshot == lastSnapshot) {
+            return
+        }
+
+        lastSnapshot = snapshot
 
         val notification = builder
             .setContentText(
@@ -85,7 +101,7 @@ class DynamicNotificationModule(service: Service) : Module<Unit>(service) {
             addAction(Intents.ACTION_PROFILE_LOADED)
         }
 
-        val ticker = ticker(TimeUnit.SECONDS.toMillis(3))
+        val ticker = ticker(TimeUnit.SECONDS.toMillis(5))
 
         while (true) {
             val shouldUpdate = isInteractive && !isPowerSaveMode
@@ -103,6 +119,7 @@ class DynamicNotificationModule(service: Service) : Module<Unit>(service) {
                 }
                 profileLoaded.onReceive {
                     builder.setContentTitle(StatusProvider.currentProfile ?: "Not selected")
+                    lastSnapshot = null
                 }
                 if (shouldUpdate) {
                     ticker.onReceive {
