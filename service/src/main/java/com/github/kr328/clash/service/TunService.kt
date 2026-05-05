@@ -32,7 +32,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
     private fun startProcessLogger(process: Process, tag: String) {
         if (BuildConfig.DEBUG) {
-            Thread {
+            launch(Dispatchers.IO + CoroutineName("ZIVPN-$tag-out")) {
                 try {
                     process.inputStream.bufferedReader().use { reader ->
                         reader.forEachLine { Log.i("[$tag] $it") }
@@ -40,24 +40,18 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                 } catch (e: java.io.IOException) {
                     // Process destroyed, ignore interruption
                 }
-            }.apply {
-                name = "ZIVPN-$tag-out"
-                isDaemon = true
-            }.start()
-        }
-
-        Thread {
-            try {
-                process.errorStream.bufferedReader().use { reader ->
-                    reader.forEachLine { Log.e("[$tag] $it") }
-                }
-            } catch (e: java.io.IOException) {
-                // Process destroyed, ignore interruption
             }
-        }.apply {
-            name = "ZIVPN-$tag-err"
-            isDaemon = true
-        }.start()
+
+            launch(Dispatchers.IO + CoroutineName("ZIVPN-$tag-err")) {
+                try {
+                    process.errorStream.bufferedReader().use { reader ->
+                        reader.forEachLine { Log.e("[$tag] $it") }
+                    }
+                } catch (e: java.io.IOException) {
+                    // Process destroyed, ignore interruption
+                }
+            }
+        }
     }
 
     private data class CorePlan(

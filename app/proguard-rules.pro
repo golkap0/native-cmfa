@@ -20,7 +20,22 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--dontobfuscate
+#-dontobfuscate
+
+# Aggressive OkHttp & Okio stripping
+-dontwarn okhttp3.internal.platform.**
+-dontwarn org.conscrypt.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.openjsse.**
+
+-assumenosideeffects class okhttp3.internal.platform.Platform {
+    static void log(...);
+}
+
+# General optimizations
+-repackageclasses ''
+-allowaccessmodification
+-mergeinterfacesaggressively
 
 -assumenosideeffects class kotlin.jvm.internal.Intrinsics {
     public static void checkNotNull(...);

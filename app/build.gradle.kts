@@ -30,6 +30,16 @@ dependencies {
     implementation(libs.androidx.room.runtime)
 }
 
+android {
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+}
+
 tasks.getByName("clean", type = Delete::class) {
     delete(file("release"))
 }

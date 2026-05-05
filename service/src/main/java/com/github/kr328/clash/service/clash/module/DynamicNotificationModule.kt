@@ -71,27 +71,34 @@ class DynamicNotificationModule(service: Service) : Module<Unit>(service) {
     }
 
     override suspend fun run() = coroutineScope {
-        var shouldUpdate = service.getSystemService<PowerManager>()?.isInteractive ?: true
+        val powerManager = service.getSystemService<PowerManager>()
+        var isInteractive = powerManager?.isInteractive ?: true
+        var isPowerSaveMode = powerManager?.isPowerSaveMode ?: false
 
-        val screenToggle = receiveBroadcast(false, Channel.CONFLATED) {
+        val systemReceiver = receiveBroadcast(false, Channel.CONFLATED) {
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED)
         }
 
         val profileLoaded = receiveBroadcast(capacity = Channel.CONFLATED) {
             addAction(Intents.ACTION_PROFILE_LOADED)
         }
 
-        val ticker = ticker(TimeUnit.SECONDS.toMillis(1))
+        val ticker = ticker(TimeUnit.SECONDS.toMillis(3))
 
         while (true) {
+            val shouldUpdate = isInteractive && !isPowerSaveMode
+
             select<Unit> {
-                screenToggle.onReceive {
+                systemReceiver.onReceive {
                     when (it.action) {
                         Intent.ACTION_SCREEN_ON ->
-                            shouldUpdate = true
+                            isInteractive = true
                         Intent.ACTION_SCREEN_OFF ->
-                            shouldUpdate = false
+                            isInteractive = false
+                        PowerManager.ACTION_POWER_SAVE_MODE_CHANGED ->
+                            isPowerSaveMode = powerManager?.isPowerSaveMode ?: false
                     }
                 }
                 profileLoaded.onReceive {

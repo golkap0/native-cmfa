@@ -168,6 +168,12 @@ subprojects {
                     getDefaultProguardFile("proguard-android-optimize.txt"),
                     "proguard-rules.pro"
                 )
+
+                if (isApp) {
+                    ndk {
+                        debugSymbolLevel = "none"
+                    }
+                }
             }
             named("debug") {
                 versionNameSuffix = ".debug"
