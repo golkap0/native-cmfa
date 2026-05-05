@@ -3,13 +3,10 @@ package com.github.kr328.clash
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.PersistableBundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.github.kr328.clash.common.util.intent
-import com.github.kr328.clash.common.util.ticker
 import com.github.kr328.clash.design.MainDesign
 import com.github.kr328.clash.design.ui.ToastDuration
 import com.github.kr328.clash.util.startClashService
@@ -18,11 +15,12 @@ import com.github.kr328.clash.util.withClash
 import com.github.kr328.clash.util.withProfile
 import com.github.kr328.clash.core.bridge.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withContext
-import java.util.concurrent.TimeUnit
 import com.github.kr328.clash.design.R
+import com.github.kr328.clash.service.remote.ITrafficObserver
 
 class MainActivity : BaseActivity<MainDesign>() {
     override suspend fun main() {
@@ -59,53 +57,92 @@ class MainActivity : BaseActivity<MainDesign>() {
 
         design.fetch()
 
-        val ticker = ticker(TimeUnit.SECONDS.toMillis(1))
+        val trafficUpdates = Channel<Long>(Channel.CONFLATED)
+        val trafficObserver = ITrafficObserver {
+            trafficUpdates.trySend(it)
+        }
+        var trafficObserverAttached = false
 
-        while (isActive) {
-            select<Unit> {
-                events.onReceive {
-                    when (it) {
-                        Event.ActivityStart,
-                        Event.ServiceRecreated,
-                        Event.ClashStop, Event.ClashStart,
-                        Event.ProfileLoaded, Event.ProfileChanged -> design.fetch()
-                        else -> Unit
-                    }
+        suspend fun updateTrafficObserver() {
+            if (clashRunning && !trafficObserverAttached) {
+                withClash {
+                    setTrafficObserver(trafficObserver, 3000L)
                 }
-                design.requests.onReceive {
-                    when (it) {
-                        MainDesign.Request.ToggleStatus -> {
-                            if (clashRunning)
-                                stopClashService()
-                            else
-                                design.startClash()
-                        }
-                        MainDesign.Request.OpenProxy ->
-                            startActivity(ProxyActivity::class.intent)
-                        MainDesign.Request.OpenProfiles ->
-                            startActivity(ProfilesActivity::class.intent)
-                        MainDesign.Request.OpenProviders ->
-                            startActivity(ProvidersActivity::class.intent)
-                        MainDesign.Request.OpenLogs -> {
-                            if (LogcatService.running) {
-                                startActivity(LogcatActivity::class.intent)
-                            } else {
-                                startActivity(LogsActivity::class.intent)
+
+                trafficObserverAttached = true
+            } else if (!clashRunning && trafficObserverAttached) {
+                withClash {
+                    setTrafficObserver(null, 0)
+                }
+
+                trafficObserverAttached = false
+            }
+        }
+
+        updateTrafficObserver()
+
+        try {
+            while (isActive) {
+                select<Unit> {
+                    events.onReceive {
+                        when (it) {
+                            Event.ActivityStart,
+                            Event.ServiceRecreated,
+                            Event.ClashStop, Event.ClashStart,
+                            Event.ProfileLoaded, Event.ProfileChanged -> {
+                                if (it == Event.ServiceRecreated) {
+                                    trafficObserverAttached = false
+                                }
+
+                                design.fetch()
+                                updateTrafficObserver()
                             }
+                            else -> Unit
                         }
-                        MainDesign.Request.OpenZivpnSettings ->
-                            startActivity(ZivpnSettingsActivity::class.intent)
-                        MainDesign.Request.OpenAbout ->
-                            design.showAbout(queryAppVersionName())
-                        else -> Unit // Handle unused requests
                     }
-                }
-                if (clashRunning) {
-                    ticker.onReceive {
-                        design.fetchTraffic()
+                    design.requests.onReceive {
+                        when (it) {
+                            MainDesign.Request.ToggleStatus -> {
+                                if (clashRunning)
+                                    stopClashService()
+                                else
+                                    design.startClash()
+                            }
+                            MainDesign.Request.OpenProxy ->
+                                startActivity(ProxyActivity::class.intent)
+                            MainDesign.Request.OpenProfiles ->
+                                startActivity(ProfilesActivity::class.intent)
+                            MainDesign.Request.OpenProviders ->
+                                startActivity(ProvidersActivity::class.intent)
+                            MainDesign.Request.OpenLogs -> {
+                                if (LogcatService.running) {
+                                    startActivity(LogcatActivity::class.intent)
+                                } else {
+                                    startActivity(LogsActivity::class.intent)
+                                }
+                            }
+                            MainDesign.Request.OpenZivpnSettings ->
+                                startActivity(ZivpnSettingsActivity::class.intent)
+                            MainDesign.Request.OpenAbout ->
+                                design.showAbout(queryAppVersionName())
+                            else -> Unit // Handle unused requests
+                        }
+                    }
+                    if (clashRunning) {
+                        trafficUpdates.onReceive {
+                            design.setForwarded(it)
+                        }
                     }
                 }
             }
+        } finally {
+            if (trafficObserverAttached) {
+                withClash {
+                    setTrafficObserver(null, 0)
+                }
+            }
+
+            trafficUpdates.close()
         }
     }
 
@@ -124,12 +161,6 @@ class MainActivity : BaseActivity<MainDesign>() {
 
         withProfile {
             setProfileName(queryActive()?.name)
-        }
-    }
-
-    private suspend fun MainDesign.fetchTraffic() {
-        withClash {
-            setForwarded(queryTrafficTotal())
         }
     }
 

@@ -8,6 +8,7 @@ import com.github.kr328.clash.service.data.Selection
 import com.github.kr328.clash.service.data.SelectionDao
 import com.github.kr328.clash.service.remote.IClashManager
 import com.github.kr328.clash.service.remote.ILogObserver
+import com.github.kr328.clash.service.remote.ITrafficObserver
 import com.github.kr328.clash.service.store.ServiceStore
 import com.github.kr328.clash.service.util.sendOverrideChanged
 import kotlinx.coroutines.*
@@ -17,6 +18,7 @@ class ClashManager(private val context: Context) : IClashManager,
     CoroutineScope by CoroutineScope(Dispatchers.IO) {
     private val store = ServiceStore(context)
     private var logReceiver: ReceiveChannel<LogMessage>? = null
+    private var trafficJob: Job? = null
 
     override fun queryTunnelState(): TunnelState {
         return Clash.queryTunnelState()
@@ -83,6 +85,7 @@ class ClashManager(private val context: Context) : IClashManager,
 
                 Clash.forceGc()
             }
+            logReceiver = null
 
             if (observer != null) {
                 logReceiver = Clash.subscribeLogcat().also { c ->
@@ -104,6 +107,39 @@ class ClashManager(private val context: Context) : IClashManager,
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+
+    override fun setTrafficObserver(observer: ITrafficObserver?, interval: Long) {
+        synchronized(this) {
+            trafficJob?.cancel()
+            trafficJob = null
+
+            if (observer == null)
+                return
+
+            val sampleInterval = interval.coerceAtLeast(1_000L)
+
+            trafficJob = launch {
+                var lastTotal = Long.MIN_VALUE
+
+                try {
+                    while (isActive) {
+                        val total = Clash.queryTrafficTotal()
+
+                        if (total != lastTotal) {
+                            observer.updateTrafficTotal(total)
+                            lastTotal = total
+                        }
+
+                        delay(sampleInterval)
+                    }
+                } catch (e: CancellationException) {
+                    // intended behavior
+                } catch (e: Exception) {
+                    Log.w("Traffic observer crashed", e)
                 }
             }
         }
