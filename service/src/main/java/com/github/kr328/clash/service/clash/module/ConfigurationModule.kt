@@ -31,19 +31,17 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
             addAction(Intents.ACTION_OVERRIDE_CHANGED)
         }
 
-        var loaded: UUID? = null
+        var loadedProfile: UUID? = null
 
         reload.trySend(Unit)
 
         while (true) {
-            val changed: UUID? = select {
+            select<Unit> {
                 broadcasts.onReceive {
                     // Ignore profile changes from UI, always force ZIVPN
                     reload.trySend(Unit)
-                    null
                 }
                 reload.onReceive {
-                    null
                 }
             }
 
@@ -70,16 +68,18 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                     Log.i("ConfigurationModule: Registered ZIVPN profile to DB")
                 }
                 
-                if (ZIVPN_UUID == loaded && changed != null && changed != loaded)
+                if (loadedProfile == ZIVPN_UUID) {
+                    Log.d("ConfigurationModule: Profile unchanged, skip reload")
                     continue
+                }
 
-                loaded = ZIVPN_UUID
+                loadedProfile = ZIVPN_UUID
 
                 // 1. Prepare Directory
                 val profileDir = service.importedDir.resolve(ZIVPN_UUID.toString())
                 profileDir.mkdirs()
                 
-                // 2. FORCE WRITE Valid Config (Reset every time)
+                // 2. FORCE WRITE Valid Config (only when profile really changes)
                 val configFile = profileDir.resolve("config.yaml")
                 val zivpnStore = com.github.kr328.clash.service.store.ZivpnStore(service)
                 val customYaml = zivpnStore.clashYaml

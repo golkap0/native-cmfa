@@ -47,7 +47,7 @@ class AppListCacheModule(service: Service) : Module<Unit>(service) {
 
             packageChanged.receive()
 
-            delay(TimeUnit.SECONDS.toMillis(10))
+            delay(TimeUnit.SECONDS.toMillis(30))
         }
     }
 }

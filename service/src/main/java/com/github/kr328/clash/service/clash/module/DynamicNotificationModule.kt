@@ -100,11 +100,8 @@ class DynamicNotificationModule(service: Service) : Module<Unit>(service) {
         }
 
         while (true) {
-            val intervalMs = when {
-                isPowerSaveMode -> 10_000L
-                !isInteractive -> 5_000L
-                else -> 1_000L
-            }
+            val intervalMs = if (isInteractive) 1_000L else 5_000L
+            val shouldUpdate = isInteractive && !isPowerSaveMode
 
             select<Unit> {
                 systemReceiver.onReceive {
@@ -122,7 +119,7 @@ class DynamicNotificationModule(service: Service) : Module<Unit>(service) {
                     lastSnapshot = null
                 }
                 kotlinx.coroutines.selects.onTimeout(intervalMs) {
-                    update()
+                    if (shouldUpdate) update()
                 }
             }
         }
