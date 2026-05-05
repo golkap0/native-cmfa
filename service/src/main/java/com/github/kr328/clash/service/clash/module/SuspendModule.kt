@@ -12,27 +12,38 @@ import kotlinx.coroutines.withContext
 
 class SuspendModule(service: Service) : Module<Unit>(service) {
     override suspend fun run() {
-        val interactive = service.getSystemService<PowerManager>()?.isInteractive ?: true
+        val powerManager = service.getSystemService<PowerManager>()
+        var isInteractive = powerManager?.isInteractive ?: true
+        var isPowerSaveMode = powerManager?.isPowerSaveMode ?: false
 
-        Clash.suspendCore(!interactive)
+        Clash.suspendCore(!isInteractive || isPowerSaveMode)
 
         val screenToggle = receiveBroadcast(false, Channel.CONFLATED) {
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED)
         }
 
         try {
             while (true) {
                 when (screenToggle.receive().action) {
                     Intent.ACTION_SCREEN_ON -> {
-                        Clash.suspendCore(false)
+                        isInteractive = true
+                        Clash.suspendCore(!isInteractive || isPowerSaveMode)
 
                         Log.d("Clash resumed")
                     }
                     Intent.ACTION_SCREEN_OFF -> {
-                        Clash.suspendCore(true)
+                        isInteractive = false
+                        Clash.suspendCore(!isInteractive || isPowerSaveMode)
 
                         Log.d("Clash suspended")
+                    }
+                    PowerManager.ACTION_POWER_SAVE_MODE_CHANGED -> {
+                        isPowerSaveMode = powerManager?.isPowerSaveMode ?: false
+                        Clash.suspendCore(!isInteractive || isPowerSaveMode)
+
+                        Log.d("Clash suspend state changed: interactive=$isInteractive powerSave=$isPowerSaveMode")
                     }
                     else -> {
                         // unreachable

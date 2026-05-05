@@ -11,7 +11,6 @@ import com.github.kr328.clash.common.compat.getColorCompat
 import com.github.kr328.clash.common.compat.pendingIntentFlags
 import com.github.kr328.clash.common.constants.Components
 import com.github.kr328.clash.common.constants.Intents
-import com.github.kr328.clash.common.util.ticker
 import com.github.kr328.clash.core.Clash
 import com.github.kr328.clash.core.util.trafficDownload
 import com.github.kr328.clash.core.util.trafficUpload
@@ -20,7 +19,6 @@ import com.github.kr328.clash.service.StatusProvider
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.selects.select
-import java.util.concurrent.TimeUnit
 
 class DynamicNotificationModule(service: Service) : Module<Unit>(service) {
     private data class Snapshot(
@@ -101,10 +99,12 @@ class DynamicNotificationModule(service: Service) : Module<Unit>(service) {
             addAction(Intents.ACTION_PROFILE_LOADED)
         }
 
-        val ticker = ticker(TimeUnit.SECONDS.toMillis(5))
-
         while (true) {
-            val shouldUpdate = isInteractive && !isPowerSaveMode
+            val intervalMs = when {
+                isPowerSaveMode -> 10_000L
+                !isInteractive -> 5_000L
+                else -> 1_000L
+            }
 
             select<Unit> {
                 systemReceiver.onReceive {
@@ -121,10 +121,8 @@ class DynamicNotificationModule(service: Service) : Module<Unit>(service) {
                     builder.setContentTitle(StatusProvider.currentProfile ?: "Not selected")
                     lastSnapshot = null
                 }
-                if (shouldUpdate) {
-                    ticker.onReceive {
-                        update()
-                    }
+                kotlinx.coroutines.selects.onTimeout(intervalMs) {
+                    update()
                 }
             }
         }

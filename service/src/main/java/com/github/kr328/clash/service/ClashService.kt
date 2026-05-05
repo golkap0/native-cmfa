@@ -35,6 +35,7 @@ class ClashService : BaseService() {
 
         install(AppListCacheModule(self))
         install(TimeZoneModule(self))
+        install(ThermalManagementModule(self))
         install(SuspendModule(self))
 
         try {

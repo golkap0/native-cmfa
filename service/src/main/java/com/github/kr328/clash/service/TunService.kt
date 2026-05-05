@@ -23,6 +23,7 @@ import android.app.ActivityManager
 import org.json.JSONObject
 
 class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.Default) {
+    private val loggerDispatcher = Dispatchers.IO.limitedParallelism(1)
     private val self: TunService
         get() = this
 
@@ -32,9 +33,9 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
     private fun startProcessLogger(process: Process, tag: String) {
         if (BuildConfig.DEBUG) {
-            launch(Dispatchers.IO + CoroutineName("ZIVPN-$tag-out")) {
+            launch(loggerDispatcher + CoroutineName("ZIVPN-$tag-out")) {
                 try {
-                    process.inputStream.bufferedReader().use { reader ->
+                    process.inputStream.buffered(8 * 1024).reader().use { reader ->
                         reader.forEachLine { Log.i("[$tag] $it") }
                     }
                 } catch (e: java.io.IOException) {
@@ -42,9 +43,9 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                 }
             }
 
-            launch(Dispatchers.IO + CoroutineName("ZIVPN-$tag-err")) {
+            launch(loggerDispatcher + CoroutineName("ZIVPN-$tag-err")) {
                 try {
-                    process.errorStream.bufferedReader().use { reader ->
+                    process.errorStream.buffered(8 * 1024).reader().use { reader ->
                         reader.forEachLine { Log.e("[$tag] $it") }
                     }
                 } catch (e: java.io.IOException) {
@@ -194,6 +195,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
         install(AppListCacheModule(self))
         install(TimeZoneModule(self))
+        install(ThermalManagementModule(self))
         install(SuspendModule(self))
 
         try {
@@ -252,7 +254,21 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         sendClashStarted()
 
-        return super.onStartCommand(intent, flags, startId)
+        val now = System.currentTimeMillis()
+        if (now - restartWindowStartAt > RESTART_WINDOW_MS) {
+            restartWindowStartAt = now
+            restartAttempts = 0
+        }
+
+        restartAttempts += 1
+        Log.i("TunService restart attempt #$restartAttempts")
+
+        if (restartAttempts > MAX_RESTART_ATTEMPTS) {
+            Log.e("TunService restart limit reached, skip sticky restart")
+            return START_NOT_STICKY
+        }
+
+        return START_STICKY
     }
 
     override fun onDestroy() {
@@ -388,6 +404,11 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
     }
 
     companion object {
+        private const val MAX_RESTART_ATTEMPTS = 5
+        private const val RESTART_WINDOW_MS = 5 * 60 * 1000L
+        private var restartAttempts = 0
+        private var restartWindowStartAt = 0L
+
         private const val TUN_SUBNET_PREFIX = 30
         private const val TUN_GATEWAY = "172.19.0.1"
         private const val TUN_SUBNET_PREFIX6 = 126
