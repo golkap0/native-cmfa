@@ -13,6 +13,7 @@ import com.github.kr328.clash.common.compat.startForegroundCompat
 import com.github.kr328.clash.common.constants.Components
 import com.github.kr328.clash.common.constants.Intents
 import com.github.kr328.clash.common.id.UndefinedIds
+import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.common.util.setUUID
 import com.github.kr328.clash.common.util.uuid
 import com.github.kr328.clash.service.data.ImportedDao
@@ -39,10 +40,27 @@ class ProfileWorker : BaseService() {
             delay(TimeUnit.SECONDS.toMillis(10))
 
             while (isActive) {
-                val job = synchronized(jobs) { jobs.removeFirstOrNull() } ?: break
+                val job = synchronized(jobs) { 
+                    val j = jobs.firstOrNull()
+                    if (j != null && !j.isActive) {
+                        // Remove completed or cancelled jobs immediately
+                        jobs.removeAt(0)
+                    }
+                    j
+                } ?: break
 
-                withTimeoutOrNull(TimeUnit.SECONDS.toMillis(15)) {
-                    job.join()
+                // Tambahkan timeout untuk mencegah job stuck forever
+                // Jika job tidak selesai dalam 30 detik, anggap stuck dan cancel
+                val jobTimeout = TimeUnit.SECONDS.toMillis(30)
+                
+                try {
+                    withTimeout(jobTimeout) {
+                        job.join()
+                    }
+                } catch (e: TimeoutCancellationException) {
+                    Log.e("ProfileWorker job stuck selama ${jobTimeout}ms, cancelling...")
+                    job.cancel()
+                    // Jangan remove job di sini karena akan di-handle di finally block
                 }
             }
 

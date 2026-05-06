@@ -33,7 +33,7 @@ Thumbs.db
 .env.local
 *.env.*
 
-# Coverage reports
+# Coverage
 coverage/
 htmlcov/
 .coverage
