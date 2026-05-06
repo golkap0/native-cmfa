@@ -17,6 +17,7 @@ import kotlinx.coroutines.withContext
 abstract class Module<E>(val service: Service) {
     private val events: Channel<E> = Channel(Channel.UNLIMITED)
     private val receivers: MutableList<BroadcastReceiver> = mutableListOf()
+    private val channels: MutableList<Channel<*>> = mutableListOf()
 
     val onEvent: SelectClause1<E>
         get() = events.onReceive
@@ -51,6 +52,7 @@ abstract class Module<E>(val service: Service) {
         }
 
         receivers.add(receiver)
+        channels.add(channel)
 
         return channel
     }
@@ -64,9 +66,10 @@ abstract class Module<E>(val service: Service) {
             run()
         } finally {
             withContext(NonCancellable) {
-                receivers.forEach {
-                    it.onReceive(null, null)
+                events.close()
+                channels.forEach { it.close() }
 
+                receivers.forEach {
                     service.unregisterReceiver(it)
                 }
 
