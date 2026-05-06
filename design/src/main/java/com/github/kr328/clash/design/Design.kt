@@ -23,7 +23,6 @@ abstract class Design<R>(val context: Context) :
     fun destroy() {
         coroutineContext[Job]?.cancel()
         requests.close()
-        surface.close()
     }
 
     suspend fun showToast(
