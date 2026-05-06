@@ -195,8 +195,11 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
         install(AppListCacheModule(self))
         install(TimeZoneModule(self))
-        install(ThermalManagementModule(self))
-        install(SuspendModule(self))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            install(ThermalManagementModule(self))
+        } else {
+            install(SuspendModule(self))
+        }
 
         try {
             tun.open()

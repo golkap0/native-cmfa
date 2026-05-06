@@ -61,7 +61,7 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
         }
 
         override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
-            Log.i("NetworkObserve onLinkPropertiesChanged network=$network $linkProperties")
+            Log.d("NetworkObserve onLinkPropertiesChanged network=$network dns=${linkProperties.dnsServers.size}")
             networkInfos[network]?.dnsList = linkProperties.dnsServers
             notifyDnsChange()
 
