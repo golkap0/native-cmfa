@@ -44,12 +44,24 @@ class AppListCacheModule(service: Service) : Module<Unit>(service) {
             addDataScheme("package")
         }
 
+        var lastScanTime = 0L
+        val debounceDelay = TimeUnit.SECONDS.toMillis(5)
+
         while (true) {
-            reload()
-
+            // Debouncing: tunggu event package sebelum scan
             packageChanged.receive()
-
-            delay(TimeUnit.SECONDS.toMillis(10))
+            
+            // Delay debounce untuk mengumpulkan multiple events
+            delay(debounceDelay)
+            
+            // Drain semua event yang pending
+            while (packageChanged.tryReceive().isSuccess) {
+                // consume all pending events
+            }
+            
+            // Scan hanya jika ada perubahan
+            reload()
+            lastScanTime = System.currentTimeMillis()
         }
     }
 }

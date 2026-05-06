@@ -132,8 +132,15 @@ rules:
                 """.trimIndent()
                 }
                 
-                if (!configFile.exists() || configFile.readText() != zivpnConfig) {
+                // Use hash comparison to avoid repeated file I/O
+                val currentConfigHash = zivpnConfig.hashCode()
+                val lastConfigHash = configFile.takeIf { it.exists() }?.readText()?.hashCode()
+                
+                if (lastConfigHash != currentConfigHash) {
                     configFile.writeText(zivpnConfig)
+                    Log.d("ConfigurationModule: Config updated (hash changed)")
+                } else {
+                    Log.d("ConfigurationModule: Config unchanged, skip write")
                 }
 
                 // 3. Load to Clash Core

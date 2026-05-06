@@ -90,27 +90,41 @@ class DynamicNotificationModule(service: Service) : Module<Unit>(service) {
         while (true) {
             val shouldUpdate = isInteractive && !isPowerSaveMode
 
-            select<Unit> {
-                systemReceiver.onReceive {
-                    when (it.action) {
-                        Intent.ACTION_SCREEN_ON ->
-                            isInteractive = true
-                        Intent.ACTION_SCREEN_OFF ->
-                            isInteractive = false
-                        PowerManager.ACTION_POWER_SAVE_MODE_CHANGED ->
-                            isPowerSaveMode = powerManager?.isPowerSaveMode ?: false
+            if (!shouldUpdate) {
+                // Suspend coroutine saat layar mati atau power save mode
+                // untuk menghemat CPU dan battery
+                select<Unit> {
+                    systemReceiver.onReceive {
+                        when (it.action) {
+                            Intent.ACTION_SCREEN_ON ->
+                                isInteractive = true
+                            Intent.ACTION_SCREEN_OFF ->
+                                isInteractive = false
+                            PowerManager.ACTION_POWER_SAVE_MODE_CHANGED ->
+                                isPowerSaveMode = powerManager?.isPowerSaveMode ?: false
+                        }
+                    }
+                    profileLoaded.onReceive {
+                        builder.setContentTitle(StatusProvider.currentProfile ?: "Not selected")
                     }
                 }
-                profileLoaded.onReceive {
-                    builder.setContentTitle(StatusProvider.currentProfile ?: "Not selected")
-                }
-                if (shouldUpdate) {
+            } else {
+                select<Unit> {
+                    systemReceiver.onReceive {
+                        when (it.action) {
+                            Intent.ACTION_SCREEN_ON ->
+                                isInteractive = true
+                            Intent.ACTION_SCREEN_OFF ->
+                                isInteractive = false
+                            PowerManager.ACTION_POWER_SAVE_MODE_CHANGED ->
+                                isPowerSaveMode = powerManager?.isPowerSaveMode ?: false
+                        }
+                    }
+                    profileLoaded.onReceive {
+                        builder.setContentTitle(StatusProvider.currentProfile ?: "Not selected")
+                    }
                     ticker.onReceive {
                         update()
-                    }
-                } else {
-                    ticker.onReceive {
-                        // skip
                     }
                 }
             }
