@@ -84,6 +84,8 @@ class ClashManager(private val context: Context) : IClashManager,
                 Clash.forceGc()
             }
 
+            logReceiver = null
+
             if (observer != null) {
                 logReceiver = Clash.subscribeLogcat().also { c ->
                     launch {

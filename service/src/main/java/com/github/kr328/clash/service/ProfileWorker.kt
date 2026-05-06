@@ -41,12 +41,8 @@ class ProfileWorker : BaseService() {
 
             while (isActive) {
                 val job = synchronized(jobs) { 
-                    val j = jobs.firstOrNull()
-                    if (j != null && !j.isActive) {
-                        // Remove completed or cancelled jobs immediately
-                        jobs.removeAt(0)
-                    }
-                    j
+                    jobs.removeAll { it.isCompleted || it.isCancelled }
+                    jobs.firstOrNull()
                 } ?: break
 
                 // Tambahkan timeout untuk mencegah job stuck forever
@@ -60,7 +56,7 @@ class ProfileWorker : BaseService() {
                 } catch (e: TimeoutCancellationException) {
                     Log.e("ProfileWorker job stuck selama ${jobTimeout}ms, cancelling...")
                     job.cancel()
-                    // Jangan remove job di sini karena akan di-handle di finally block
+                    // Removal akan ditangani oleh cleanup di loop/finally job
                 }
             }
 

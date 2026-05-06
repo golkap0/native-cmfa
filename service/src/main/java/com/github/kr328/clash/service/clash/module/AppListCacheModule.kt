@@ -44,8 +44,9 @@ class AppListCacheModule(service: Service) : Module<Unit>(service) {
             addDataScheme("package")
         }
 
-        var lastScanTime = 0L
         val debounceDelay = TimeUnit.SECONDS.toMillis(5)
+        val minScanInterval = TimeUnit.SECONDS.toMillis(15)
+        var lastScanTime = 0L
 
         while (true) {
             // Debouncing: tunggu event package sebelum scan
@@ -59,9 +60,14 @@ class AppListCacheModule(service: Service) : Module<Unit>(service) {
                 // consume all pending events
             }
             
-            // Scan hanya jika ada perubahan
+            val now = System.currentTimeMillis()
+            if (now - lastScanTime < minScanInterval) {
+                Log.d("Skip app scan: throttled")
+                continue
+            }
+
             reload()
-            lastScanTime = System.currentTimeMillis()
+            lastScanTime = now
         }
     }
 }

@@ -87,7 +87,7 @@ class DynamicNotificationModule(service: Service) : Module<Unit>(service) {
 
         val ticker = ticker(TimeUnit.SECONDS.toMillis(5))
 
-        while (true) {
+        while (kotlinx.coroutines.currentCoroutineContext().isActive) {
             val shouldUpdate = isInteractive && !isPowerSaveMode
 
             if (!shouldUpdate) {
