@@ -147,6 +147,8 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
             withContext(NonCancellable) {
                 unregister()
 
+                networkInfos.clear()
+
                 Log.i("NetworkObserve dns = []")
                 Clash.notifyDnsChanged(emptyList())
             }

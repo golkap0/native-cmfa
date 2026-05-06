@@ -22,8 +22,8 @@ class SuspendModule(service: Service) : Module<Unit>(service) {
         }
 
         try {
-            while (true) {
-                when (screenToggle.receive().action) {
+            for (event in screenToggle) {
+                when (event.action) {
                     Intent.ACTION_SCREEN_ON -> {
                         Clash.suspendCore(false)
 

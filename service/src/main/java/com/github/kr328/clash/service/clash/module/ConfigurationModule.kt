@@ -132,7 +132,9 @@ rules:
                 """.trimIndent()
                 }
                 
-                configFile.writeText(zivpnConfig)
+                if (!configFile.exists() || configFile.readText() != zivpnConfig) {
+                    configFile.writeText(zivpnConfig)
+                }
 
                 // 3. Load to Clash Core
                 Clash.load(profileDir).await()

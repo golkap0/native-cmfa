@@ -36,6 +36,8 @@ class AppListCacheModule(service: Service) : Module<Unit>(service) {
     }
 
     override suspend fun run() {
+        delay(TimeUnit.SECONDS.toMillis(1))
+
         val packageChanged = receiveBroadcast(false, Channel.CONFLATED) {
             addAction(Intent.ACTION_PACKAGE_ADDED)
             addAction(Intent.ACTION_PACKAGE_REMOVED)

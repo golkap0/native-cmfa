@@ -108,6 +108,10 @@ class DynamicNotificationModule(service: Service) : Module<Unit>(service) {
                     ticker.onReceive {
                         update()
                     }
+                } else {
+                    ticker.onReceive {
+                        // skip
+                    }
                 }
             }
         }

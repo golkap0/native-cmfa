@@ -1,6 +1,7 @@
 package com.github.kr328.clash.service
 
 import android.content.Context
+import com.github.kr328.clash.common.log.Log
 import com.github.kr328.clash.service.data.Database
 import com.github.kr328.clash.service.data.Imported
 import com.github.kr328.clash.service.data.ImportedDao
@@ -31,9 +32,13 @@ class ProfileManager(private val context: Context) : IProfileManager,
 
     init {
         launch {
-            Database.database //.init
+            try {
+                Database.database //.init
 
-            ProfileReceiver.rescheduleAll(context)
+                ProfileReceiver.rescheduleAll(context)
+            } catch (e: Exception) {
+                Log.e("ProfileManager: init failed", e)
+            }
         }
     }
 

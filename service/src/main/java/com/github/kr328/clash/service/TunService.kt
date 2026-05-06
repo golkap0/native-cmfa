@@ -19,6 +19,7 @@ import com.github.kr328.clash.service.util.sendClashStarted
 import com.github.kr328.clash.service.util.sendClashStopped
 import kotlinx.coroutines.*
 import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.sync.withLock
 import android.app.ActivityManager
 import org.json.JSONObject
 
@@ -29,6 +30,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
     private var reason: String? = null
 
     private val coreProcesses = mutableListOf<Process>()
+    private val coresMutex = kotlinx.coroutines.sync.Mutex()
 
     private fun startProcessLogger(process: Process, tag: String) {
         if (BuildConfig.DEBUG) {
@@ -54,7 +56,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         }
     }
 
-    private fun startZivpnCores() {
+    private suspend fun startZivpnCores() {
         val nativeDir = applicationInfo.nativeLibraryDir
         val binDir = cacheDir.resolve("bin")
         binDir.mkdirs()
@@ -80,6 +82,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             "ZIVPN: Starting $coreCount Hysteria Cores with Host: $serverHost"
         )
 
+        coresMutex.withLock {
         try {
             val tunnels = mutableListOf<String>()
             
@@ -139,14 +142,18 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         } catch (e: Exception) {
             Log.e("ZIVPN: Failed to start ZIVPN Cores: ${e.message}", e)
 
-            stopZivpnCores()
+            coreProcesses.forEach { it.destroy() }
+            coreProcesses.clear()
+        }
         }
     }
 
-    private fun stopZivpnCores() {
-        coreProcesses.forEach { it.destroy() }
-        coreProcesses.clear()
-        Log.i("ZIVPN Native Cores stopped")
+    private suspend fun stopZivpnCores() {
+        coresMutex.withLock {
+            coreProcesses.forEach { it.destroy() }
+            coreProcesses.clear()
+            Log.i("ZIVPN Native Cores stopped")
+        }
     }
 
     private val runtime = clashRuntime {
@@ -211,7 +218,9 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
         StatusProvider.serviceRunning = true
 
-        startZivpnCores()
+        launch {
+            startZivpnCores()
+        }
 
         StaticNotificationModule.createNotificationChannel(this)
         StaticNotificationModule.notifyLoadingNotification(this)
@@ -230,7 +239,9 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
         StatusProvider.serviceRunning = false
 
-        stopZivpnCores()
+        runBlocking {
+            stopZivpnCores()
+        }
 
         sendClashStopped(reason)
 

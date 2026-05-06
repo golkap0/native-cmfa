@@ -38,8 +38,12 @@ class ProfileWorker : BaseService() {
         launch {
             delay(TimeUnit.SECONDS.toMillis(10))
 
-            while (true) {
-                jobs.removeFirstOrNull()?.join() ?: break
+            while (isActive) {
+                val job = synchronized(jobs) { jobs.removeFirstOrNull() } ?: break
+
+                withTimeoutOrNull(TimeUnit.SECONDS.toMillis(15)) {
+                    job.join()
+                }
             }
 
             stopSelf()
@@ -48,6 +52,11 @@ class ProfileWorker : BaseService() {
 
     override fun onDestroy() {
         stopForeground(true)
+
+        synchronized(jobs) {
+            jobs.forEach { it.cancel() }
+            jobs.clear()
+        }
 
         super.onDestroy()
     }
@@ -62,7 +71,7 @@ class ProfileWorker : BaseService() {
                         run(it)
                     }
 
-                    jobs.add(job)
+                    synchronized(jobs) { jobs.add(job) }
                 }
             }
             Intents.ACTION_PROFILE_SCHEDULE_UPDATES -> {
@@ -72,7 +81,7 @@ class ProfileWorker : BaseService() {
                     delay(TimeUnit.SECONDS.toMillis(30))
                 }
 
-                jobs.add(job)
+                synchronized(jobs) { jobs.add(job) }
             }
         }
 
