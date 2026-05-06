@@ -101,7 +101,7 @@ class DynamicNotificationModule(service: Service) : Module<Unit>(service) {
             addAction(Intents.ACTION_PROFILE_LOADED)
         }
 
-        var intervalMs = if (isInteractive && !isPowerSaveMode) TimeUnit.SECONDS.toMillis(2) else TimeUnit.SECONDS.toMillis(30)
+        var intervalMs = if (isInteractive && !isPowerSaveMode) TimeUnit.SECONDS.toMillis(3) else TimeUnit.SECONDS.toMillis(60)
         var updateTicker = ticker(intervalMs)
 
         while (true) {
@@ -118,7 +118,7 @@ class DynamicNotificationModule(service: Service) : Module<Unit>(service) {
                             isPowerSaveMode = powerManager?.isPowerSaveMode ?: false
                     }
 
-                    val nextIntervalMs = if (isInteractive && !isPowerSaveMode) TimeUnit.SECONDS.toMillis(2) else TimeUnit.SECONDS.toMillis(30)
+                    val nextIntervalMs = if (isInteractive && !isPowerSaveMode) TimeUnit.SECONDS.toMillis(3) else TimeUnit.SECONDS.toMillis(60)
                     if (nextIntervalMs != intervalMs) {
                         intervalMs = nextIntervalMs
                         updateTicker.cancel()

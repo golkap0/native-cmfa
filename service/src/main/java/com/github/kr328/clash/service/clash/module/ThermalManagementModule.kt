@@ -28,6 +28,7 @@ class ThermalManagementModule(service: Service) : Module<Unit>(service) {
         var isPowerSaveMode = powerManager.isPowerSaveMode
         var isThermalLimited = false
         var lastSuspendState: Boolean? = null
+        var lastThermalStatus: Int? = null
 
         fun applySuspendState() {
             val shouldSuspend = isThermalLimited || !isInteractive || isPowerSaveMode
@@ -51,10 +52,13 @@ class ThermalManagementModule(service: Service) : Module<Unit>(service) {
                         isThermalLimited = status >= PowerManager.THERMAL_STATUS_MODERATE
                         applySuspendState()
 
-                        if (isThermalLimited) {
-                            Log.w("Thermal warning: status=$status, core suspended")
-                        } else {
-                            Log.i("Thermal status recovered: status=$status")
+                        if (lastThermalStatus != status) {
+                            lastThermalStatus = status
+                            if (isThermalLimited) {
+                                Log.w("Thermal warning: status=$status, core suspended")
+                            } else {
+                                Log.i("Thermal status recovered: status=$status")
+                            }
                         }
                     }
                     systemReceiver.onReceive { intent ->
