@@ -60,8 +60,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         val effective: Int,
         val powerSave: Boolean,
         val lowRam: Boolean,
-        val lowMemory: Boolean,
-        val maxByCpu: Int
+        val lowMemory: Boolean
     )
 
     private fun computeCorePlan(store: com.github.kr328.clash.service.store.ZivpnStore): CorePlan {
@@ -74,11 +73,8 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         val lowRam = activityManager.isLowRamDevice
         val lowMemory = memoryInfo.lowMemory
 
-        val maxByCpu = Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
-
         var effective = configured
-            .coerceAtMost(maxByCpu)
-            .coerceAtMost(2) // hard cap to reduce sustained thermal load on most devices
+            .coerceAtMost(2) // cap number of libuz instances to reduce sustained thermal load
 
         if (powerSave) effective = effective.coerceAtMost(1)
         if (lowRam || lowMemory) effective = effective.coerceAtMost(1)
@@ -88,8 +84,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             effective = effective.coerceAtLeast(1),
             powerSave = powerSave,
             lowRam = lowRam,
-            lowMemory = lowMemory,
-            maxByCpu = maxByCpu
+            lowMemory = lowMemory
         )
     }
 
@@ -117,7 +112,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         val ranges = zivpnStore.portRanges.split(",").filter { it.isNotBlank() }.take(coreCount)
 
         Log.d(
-            "ZIVPN: Starting $coreCount Hysteria Cores (configured=${corePlan.configured}, cpuCap=${corePlan.maxByCpu}, powerSave=${corePlan.powerSave}, lowRam=${corePlan.lowRam}, lowMemory=${corePlan.lowMemory}) with Host: $serverHost"
+            "ZIVPN: Starting $coreCount Hysteria Cores (configured=${corePlan.configured}, powerSave=${corePlan.powerSave}, lowRam=${corePlan.lowRam}, lowMemory=${corePlan.lowMemory}) with Host: $serverHost"
         )
 
         try {
