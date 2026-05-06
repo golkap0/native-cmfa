@@ -27,10 +27,14 @@ class ThermalManagementModule(service: Service) : Module<Unit>(service) {
         var isInteractive = powerManager.isInteractive
         var isPowerSaveMode = powerManager.isPowerSaveMode
         var isThermalLimited = false
+        var lastSuspendState: Boolean? = null
 
         fun applySuspendState() {
             val shouldSuspend = isThermalLimited || !isInteractive || isPowerSaveMode
-            Clash.suspendCore(shouldSuspend)
+            if (lastSuspendState != shouldSuspend) {
+                lastSuspendState = shouldSuspend
+                Clash.suspendCore(shouldSuspend)
+            }
         }
 
         val listener = PowerManager.OnThermalStatusChangedListener { status ->

@@ -15,8 +15,17 @@ class SuspendModule(service: Service) : Module<Unit>(service) {
         val powerManager = service.getSystemService<PowerManager>()
         var isInteractive = powerManager?.isInteractive ?: true
         var isPowerSaveMode = powerManager?.isPowerSaveMode ?: false
+        var lastSuspendState: Boolean? = null
 
-        Clash.suspendCore(!isInteractive || isPowerSaveMode)
+        fun applySuspendState() {
+            val shouldSuspend = !isInteractive || isPowerSaveMode
+            if (lastSuspendState != shouldSuspend) {
+                lastSuspendState = shouldSuspend
+                Clash.suspendCore(shouldSuspend)
+            }
+        }
+
+        applySuspendState()
 
         val screenToggle = receiveBroadcast(false, Channel.CONFLATED) {
             addAction(Intent.ACTION_SCREEN_ON)
@@ -29,19 +38,19 @@ class SuspendModule(service: Service) : Module<Unit>(service) {
                 when (screenToggle.receive().action) {
                     Intent.ACTION_SCREEN_ON -> {
                         isInteractive = true
-                        Clash.suspendCore(!isInteractive || isPowerSaveMode)
+                        applySuspendState()
 
                         Log.d("Clash resumed")
                     }
                     Intent.ACTION_SCREEN_OFF -> {
                         isInteractive = false
-                        Clash.suspendCore(!isInteractive || isPowerSaveMode)
+                        applySuspendState()
 
                         Log.d("Clash suspended")
                     }
                     PowerManager.ACTION_POWER_SAVE_MODE_CHANGED -> {
                         isPowerSaveMode = powerManager?.isPowerSaveMode ?: false
-                        Clash.suspendCore(!isInteractive || isPowerSaveMode)
+                        applySuspendState()
 
                         Log.d("Clash suspend state changed: interactive=$isInteractive powerSave=$isPowerSaveMode")
                     }
