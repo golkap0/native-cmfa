@@ -85,7 +85,7 @@ class DynamicNotificationModule(service: Service) : Module<Unit>(service) {
             addAction(Intents.ACTION_PROFILE_LOADED)
         }
 
-        val ticker = ticker(TimeUnit.SECONDS.toMillis(3))
+        val ticker = ticker(TimeUnit.SECONDS.toMillis(5))
 
         while (true) {
             val shouldUpdate = isInteractive && !isPowerSaveMode

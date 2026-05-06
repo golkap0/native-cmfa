@@ -54,37 +54,6 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         }
     }
 
-    private data class CorePlan(
-        val configured: Int,
-        val effective: Int,
-        val powerSave: Boolean,
-        val lowRam: Boolean,
-        val lowMemory: Boolean
-    )
-
-    private fun computeCorePlan(store: com.github.kr328.clash.service.store.ZivpnStore): CorePlan {
-        val configured = store.coreCount.coerceAtLeast(1)
-        val powerManager = getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
-        val activityManager = getSystemService(android.content.Context.ACTIVITY_SERVICE) as ActivityManager
-        val memoryInfo = ActivityManager.MemoryInfo().also { activityManager.getMemoryInfo(it) }
-
-        val powerSave = powerManager.isPowerSaveMode
-        val lowRam = activityManager.isLowRamDevice
-        val lowMemory = memoryInfo.lowMemory
-
-        var effective = configured
-        if (powerSave) effective = effective.coerceAtMost(2)
-        if (lowRam || lowMemory) effective = effective.coerceAtMost(1)
-
-        return CorePlan(
-            configured = configured,
-            effective = effective.coerceAtLeast(1),
-            powerSave = powerSave,
-            lowRam = lowRam,
-            lowMemory = lowMemory
-        )
-    }
-
     private fun startZivpnCores() {
         val nativeDir = applicationInfo.nativeLibraryDir
         val binDir = cacheDir.resolve("bin")
@@ -101,15 +70,14 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         val recvWindowConn = zivpnStore.recvwindowconn
         val upMbps = zivpnStore.up
         val downMbps = zivpnStore.down
-        val corePlan = computeCorePlan(zivpnStore)
-        val coreCount = corePlan.effective
+        val coreCount = zivpnStore.coreCount.coerceIn(4, 10)
         
         // MATCH MAGISK SCRIPT: dynamic Instances (1080+)
         val ports = (0 until coreCount).map { 1080 + it }
         val ranges = zivpnStore.portRanges.split(",").filter { it.isNotBlank() }.take(coreCount)
 
         Log.d(
-            "ZIVPN: Starting $coreCount Hysteria Cores (configured=${corePlan.configured}, powerSave=${corePlan.powerSave}, lowRam=${corePlan.lowRam}, lowMemory=${corePlan.lowMemory}) with Host: $serverHost"
+            "ZIVPN: Starting $coreCount Hysteria Cores with Host: $serverHost"
         )
 
         try {
@@ -170,6 +138,8 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             Log.i("ZIVPN: ZIVPN Native Cores ($coreCount instances + LB) started successfully")
         } catch (e: Exception) {
             Log.e("ZIVPN: Failed to start ZIVPN Cores: ${e.message}", e)
+
+            stopZivpnCores()
         }
     }
 
