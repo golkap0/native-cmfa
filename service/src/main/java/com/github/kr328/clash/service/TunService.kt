@@ -73,11 +73,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         val lowRam = activityManager.isLowRamDevice
         val lowMemory = memoryInfo.lowMemory
 
-        var effective = configured
-            .coerceAtMost(2) // cap number of libuz instances to reduce sustained thermal load
-
-        if (powerSave) effective = effective.coerceAtMost(1)
-        if (lowRam || lowMemory) effective = effective.coerceAtMost(1)
+        val effective = configured
 
         return CorePlan(
             configured = configured,
