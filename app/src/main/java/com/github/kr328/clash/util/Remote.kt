@@ -8,6 +8,7 @@ import com.github.kr328.clash.service.remote.IProfileManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 
 suspend fun <T> withClash(
