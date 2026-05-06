@@ -18,6 +18,9 @@ fun CoroutineScope.ticker(period: Long): Channel<Long> {
             }
         } catch (ignored: Exception) {
 
+        } finally {
+            // Close channel when coroutine stops to prevent resource leak
+            channel.close()
         }
     }
 

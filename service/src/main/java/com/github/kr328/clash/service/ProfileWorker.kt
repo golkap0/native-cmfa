@@ -68,7 +68,12 @@ class ProfileWorker : BaseService() {
             Intents.ACTION_PROFILE_REQUEST_UPDATE -> {
                 intent.uuid?.also {
                     val job = launch {
-                        run(it)
+                        try {
+                            run(it)
+                        } finally {
+                            // Remove job from list when completed to prevent memory leak
+                            synchronized(jobs) { jobs.remove(job) }
+                        }
                     }
 
                     synchronized(jobs) { jobs.add(job) }
@@ -76,9 +81,14 @@ class ProfileWorker : BaseService() {
             }
             Intents.ACTION_PROFILE_SCHEDULE_UPDATES -> {
                 val job = launch {
-                    ProfileReceiver.rescheduleAll(service)
+                    try {
+                        ProfileReceiver.rescheduleAll(service)
 
-                    delay(TimeUnit.SECONDS.toMillis(30))
+                        delay(TimeUnit.SECONDS.toMillis(30))
+                    } finally {
+                        // Remove job from list when completed to prevent memory leak
+                        synchronized(jobs) { jobs.remove(job) }
+                    }
                 }
 
                 synchronized(jobs) { jobs.add(job) }
