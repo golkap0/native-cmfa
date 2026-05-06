@@ -19,7 +19,6 @@ import com.github.kr328.clash.service.util.sendClashStarted
 import com.github.kr328.clash.service.util.sendClashStopped
 import kotlinx.coroutines.*
 import kotlinx.coroutines.selects.select
-import android.app.ActivityManager
 import org.json.JSONObject
 
 class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.Default) {
@@ -58,29 +57,15 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
     private data class CorePlan(
         val configured: Int,
         val effective: Int,
-        val powerSave: Boolean,
-        val lowRam: Boolean,
-        val lowMemory: Boolean
     )
 
     private fun computeCorePlan(store: com.github.kr328.clash.service.store.ZivpnStore): CorePlan {
         val configured = store.coreCount.coerceAtLeast(1)
-        val powerManager = getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
-        val activityManager = getSystemService(android.content.Context.ACTIVITY_SERVICE) as ActivityManager
-        val memoryInfo = ActivityManager.MemoryInfo().also { activityManager.getMemoryInfo(it) }
-
-        val powerSave = powerManager.isPowerSaveMode
-        val lowRam = activityManager.isLowRamDevice
-        val lowMemory = memoryInfo.lowMemory
-
         val effective = configured
 
         return CorePlan(
             configured = configured,
-            effective = effective.coerceAtLeast(1),
-            powerSave = powerSave,
-            lowRam = lowRam,
-            lowMemory = lowMemory
+            effective = effective.coerceAtLeast(1)
         )
     }
 
@@ -108,7 +93,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         val ranges = zivpnStore.portRanges.split(",").filter { it.isNotBlank() }.take(coreCount)
 
         Log.d(
-            "ZIVPN: Starting $coreCount Hysteria Cores (configured=${corePlan.configured}, powerSave=${corePlan.powerSave}, lowRam=${corePlan.lowRam}, lowMemory=${corePlan.lowMemory}) with Host: $serverHost"
+            "ZIVPN: Starting $coreCount Hysteria Cores (configured=${corePlan.configured}) with Host: $serverHost"
         )
 
         try {
@@ -193,11 +178,6 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
         install(AppListCacheModule(self))
         install(TimeZoneModule(self))
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            install(ThermalManagementModule(self))
-        } else {
-            install(SuspendModule(self))
-        }
 
         try {
             tun.open()
