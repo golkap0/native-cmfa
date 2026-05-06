@@ -71,7 +71,7 @@ class ZivpnSettingsDesign(
                 value = store::coreCount,
                 icon = R.drawable.ic_baseline_info,
                 title = R.string.zivpn_core_count,
-                from = 4.0f,
+                from = 1.0f,
                 to = 10.0f
             ).apply {
                 summary = store.coreCount.toString()

@@ -38,7 +38,7 @@ class ZivpnStore(context: Context) {
 
     var coreCount: Int by store.int(
         key = "zivpn_core_count",
-        defaultValue = 2
+        defaultValue = 1
     )
     
     // Comma separated ranges
@@ -74,7 +74,7 @@ class ZivpnStore(context: Context) {
 
     var mtu: Int by store.int(
         key = "zivpn_mtu",
-        defaultValue = 9000
+        defaultValue = 1500
     )
 
     var serverProfiles: String by store.string(

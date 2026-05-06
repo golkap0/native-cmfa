@@ -91,7 +91,7 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
 mixed-port: 7890
 allow-lan: false
 mode: rule
-log-level: debug
+log-level: info
 external-controller: 127.0.0.1:9090
 ipv6: false
 geo-auto-update: false

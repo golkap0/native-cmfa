@@ -70,7 +70,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         val recvWindowConn = zivpnStore.recvwindowconn
         val upMbps = zivpnStore.up
         val downMbps = zivpnStore.down
-        val coreCount = zivpnStore.coreCount.coerceIn(4, 10)
+        val coreCount = zivpnStore.coreCount.coerceIn(1, 10)
         
         // MATCH MAGISK SCRIPT: dynamic Instances (1080+)
         val ports = (0 until coreCount).map { 1080 + it }
