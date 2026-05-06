@@ -90,7 +90,7 @@ class ProfileWorker : BaseService() {
                             run(it)
                         } finally {
                             // Remove job from list when completed to prevent memory leak
-                            synchronized(jobs) { jobs.remove(job) }
+                            synchronized(jobs) { jobs.remove(this.coroutineContext[Job]) }
                         }
                     }
 
@@ -105,7 +105,7 @@ class ProfileWorker : BaseService() {
                         delay(TimeUnit.SECONDS.toMillis(30))
                     } finally {
                         // Remove job from list when completed to prevent memory leak
-                        synchronized(jobs) { jobs.remove(job) }
+                        synchronized(jobs) { jobs.remove(this.coroutineContext[Job]) }
                     }
                 }
 
