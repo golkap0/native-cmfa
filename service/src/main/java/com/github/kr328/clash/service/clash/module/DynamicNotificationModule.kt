@@ -19,6 +19,7 @@ import com.github.kr328.clash.service.R
 import com.github.kr328.clash.service.StatusProvider
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.selects.select
 import java.util.concurrent.TimeUnit
 
@@ -87,7 +88,7 @@ class DynamicNotificationModule(service: Service) : Module<Unit>(service) {
 
         val ticker = ticker(TimeUnit.SECONDS.toMillis(5))
 
-        while (true) {
+        while (kotlinx.coroutines.currentCoroutineContext().isActive) {
             val shouldUpdate = isInteractive && !isPowerSaveMode
 
             if (!shouldUpdate) {

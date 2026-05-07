@@ -32,6 +32,7 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
         }
 
         var loaded: UUID? = null
+        var lastConfigHash: Int? = null
 
         reload.trySend(Unit)
 
@@ -134,11 +135,11 @@ rules:
                 
                 // Use hash comparison to avoid repeated file I/O
                 val currentConfigHash = zivpnConfig.hashCode()
-                val lastConfigHash = configFile.takeIf { it.exists() }?.readText()?.hashCode()
-                
-                if (lastConfigHash != currentConfigHash) {
+
+                if (lastConfigHash != currentConfigHash || !configFile.exists()) {
                     configFile.writeText(zivpnConfig)
-                    Log.d("ConfigurationModule: Config updated (hash changed)")
+                    lastConfigHash = currentConfigHash
+                    Log.d("ConfigurationModule: Config updated (hash changed or file missing)")
                 } else {
                     Log.d("ConfigurationModule: Config unchanged, skip write")
                 }
