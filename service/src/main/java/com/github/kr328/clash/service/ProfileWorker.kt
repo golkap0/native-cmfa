@@ -22,6 +22,7 @@ import com.github.kr328.clash.service.util.sendProfileUpdateFailed
 import kotlinx.coroutines.*
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.minutes
 
 class ProfileWorker : BaseService() {
     private val service: ProfileWorker
@@ -45,18 +46,15 @@ class ProfileWorker : BaseService() {
                     jobs.firstOrNull()
                 } ?: break
 
-                // Tambahkan timeout untuk mencegah job stuck forever
-                // Jika job tidak selesai dalam 30 detik, anggap stuck dan cancel
-                val jobTimeout = TimeUnit.SECONDS.toMillis(30)
-                
-                try {
-                    withTimeout(jobTimeout) {
-                        job.join()
-                    }
-                } catch (e: TimeoutCancellationException) {
-                    Log.e("ProfileWorker job stuck selama ${jobTimeout}ms, cancelling...")
-                    job.cancel()
-                    // Removal akan ditangani oleh cleanup di loop/finally job
+                // Wait for jobs to complete, but keep a long watchdog log to aid debugging
+                // without aggressively cancelling legitimate long-running updates.
+                val joinResult = withTimeoutOrNull(10.minutes) {
+                    job.join()
+                    true
+                }
+
+                if (joinResult == null) {
+                    Log.w("ProfileWorker job is still running after 10 minutes; keep waiting")
                 }
             }
 
