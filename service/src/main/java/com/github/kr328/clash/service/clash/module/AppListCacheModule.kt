@@ -61,13 +61,15 @@ class AppListCacheModule(service: Service) : Module<Unit>(service) {
             }
             
             val now = System.currentTimeMillis()
-            if (now - lastScanTime < minScanInterval) {
-                Log.d("Skip app scan: throttled")
-                continue
+            val waitTime = (lastScanTime + minScanInterval) - now
+
+            if (waitTime > 0) {
+                Log.d("Delay app scan: throttled for ${waitTime}ms")
+                delay(waitTime)
             }
 
             reload()
-            lastScanTime = now
+            lastScanTime = System.currentTimeMillis()
         }
     }
 }
