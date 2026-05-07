@@ -54,7 +54,8 @@ class ProfileWorker : BaseService() {
                 }
 
                 if (joinResult == null) {
-                    Log.w("ProfileWorker job is still running after 10 minutes; keep waiting")
+                    Log.w("ProfileWorker job timed out after 10 minutes; cancelling stuck job")
+                    job.cancel()
                 }
             }
 

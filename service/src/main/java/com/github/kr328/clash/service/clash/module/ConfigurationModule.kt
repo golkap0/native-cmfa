@@ -136,10 +136,10 @@ rules:
                 // Use hash comparison to avoid repeated file I/O
                 val currentConfigHash = zivpnConfig.hashCode()
 
-                if (lastConfigHash != currentConfigHash) {
+                if (lastConfigHash != currentConfigHash || !configFile.exists()) {
                     configFile.writeText(zivpnConfig)
                     lastConfigHash = currentConfigHash
-                    Log.d("ConfigurationModule: Config updated (hash changed)")
+                    Log.d("ConfigurationModule: Config updated (hash changed or file missing)")
                 } else {
                     Log.d("ConfigurationModule: Config unchanged, skip write")
                 }
